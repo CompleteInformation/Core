@@ -14,7 +14,7 @@ module Index =
 
     let todosApi =
         Remoting.createApi ()
-        |> Remoting.withBaseUrl "http://localhost:8081"
+        |> Remoting.withBaseUrl "http://localhost:8084/api"
         |> Remoting.buildProxy<IUserApi>
 
     let init () : Model * Cmd<Msg> =

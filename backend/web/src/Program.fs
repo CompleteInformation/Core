@@ -2,6 +2,7 @@ module CompleteInformation.Core.Backend.Web
 
 open System
 open System.IO
+
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Hosting
@@ -21,10 +22,18 @@ let getUser userId =
 
 let userApi: IUserApi = { get = getUser }
 
-let webApp: HttpHandler =
+let remotingApi =
     Remoting.createApi ()
+    |> Remoting.withRouteBuilder (sprintf "/api/%s/%s")
     |> Remoting.fromValue userApi
     |> Remoting.buildHttpHandler
+
+let webApp: HttpHandler =
+    choose [
+        route "/" >=> text "Server is running."
+        remotingApi
+        setStatusCode 404 >=> text "Not Found"
+    ]
 
 // ---------------------------------
 // Error handler
@@ -43,7 +52,7 @@ let errorHandler (ex: Exception) (logger: ILogger) =
 
 let configureCors (builder: CorsPolicyBuilder) =
     builder
-        .WithOrigins("http://localhost:8080")
+        .WithOrigins("http://localhost:8082")
         .AllowAnyMethod()
         .AllowAnyHeader()
     |> ignore
@@ -52,12 +61,19 @@ let configureApp (app: IApplicationBuilder) =
     let env =
         app.ApplicationServices.GetService<IWebHostEnvironment>()
 
-    (match env.IsDevelopment() with
-     | true -> app.UseDeveloperExceptionPage()
-     | false ->
-         app
-             .UseGiraffeErrorHandler(errorHandler)
-             .UseHttpsRedirection())
+    let app =
+        match env.IsDevelopment() with
+        | true ->
+            printfn "Development mode"
+            app.UseDeveloperExceptionPage()
+        | false ->
+            printfn "Production mode"
+
+            app
+                .UseGiraffeErrorHandler(errorHandler)
+                .UseHttpsRedirection()
+
+    app
         .UseCors(configureCors)
         .UseStaticFiles()
         .UseGiraffe(webApp)
@@ -71,6 +87,11 @@ let configureLogging (builder: ILoggingBuilder) =
 
 [<EntryPoint>]
 let main args =
+    // At first, we have to determine the secret for our JWT Tokens
+    // TODO: generate
+    let secret =
+        "asdinf28hßrq82h389hr2_83h8h3r3.q30hq2893hrvq9ß23hc"
+
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
 
@@ -80,7 +101,7 @@ let main args =
             webHostBuilder
                 .UseContentRoot(contentRoot)
                 .UseWebRoot(webRoot)
-                .UseUrls("http://localhost:8081")
+                .UseUrls("http://localhost:8084")
                 .Configure(Action<IApplicationBuilder> configureApp)
                 .ConfigureServices(configureServices)
                 .ConfigureLogging(configureLogging)

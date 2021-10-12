@@ -1,11 +1,7 @@
-open System
 open System.Diagnostics
-open System.Threading.Tasks
 
 type CommandResult = {
   exitCode: int;
-  standardOutput: string;
-  standardError: string
 }
 
 let executeCommand executable args =
@@ -14,25 +10,17 @@ let executeCommand executable args =
     startInfo.FileName <- executable
     for a in args do
       startInfo.ArgumentList.Add(a)
-    startInfo.RedirectStandardOutput <- true
-    startInfo.RedirectStandardError <- true
+    startInfo.RedirectStandardOutput <- false
+    startInfo.RedirectStandardError <- false
     startInfo.UseShellExecute <- false
     startInfo.CreateNoWindow <- true
     use p = new Process()
     p.StartInfo <- startInfo
     p.Start() |> ignore
 
-    let outTask = Task.WhenAll([|
-      p.StandardOutput.ReadToEndAsync();
-      p.StandardError.ReadToEndAsync()
-    |])
-
     do! p.WaitForExitAsync() |> Async.AwaitTask
-    let! out = outTask |> Async.AwaitTask
     return {
       exitCode = p.ExitCode;
-      standardOutput = out.[0];
-      standardError = out.[1]
     }
   }
 
@@ -43,7 +31,7 @@ let serveWebClient () =
     executeShellCommand "cd frontend/web && npm run start"
 
 let serveWebServer () =
-    executeShellCommand "cd backend/web/src && dotnet run"
+    executeShellCommand "cd backend/web/src && dotnet watch run"
 
 let serveWeb () =
     [ serveWebClient (); serveWebServer () ]
