@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "web", "web", "{30F6DAFE-6CD
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WebFrontend", "frontend\web\src\WebFrontend.fsproj", "{863C372A-D26E-41F2-B8FC-C1546BF1A9DD}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "run", "run.fsproj", "{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,18 @@ Global
 		{863C372A-D26E-41F2-B8FC-C1546BF1A9DD}.Release|x64.Build.0 = Release|Any CPU
 		{863C372A-D26E-41F2-B8FC-C1546BF1A9DD}.Release|x86.ActiveCfg = Release|Any CPU
 		{863C372A-D26E-41F2-B8FC-C1546BF1A9DD}.Release|x86.Build.0 = Release|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Debug|x64.Build.0 = Debug|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Debug|x86.Build.0 = Debug|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Release|x64.ActiveCfg = Release|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Release|x64.Build.0 = Release|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Release|x86.ActiveCfg = Release|Any CPU
+		{5C57DB21-A93B-4C01-A24E-D6C7D1914D68}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E01E5CC5-5333-4C3F-88C8-27D35B0032A9} = {B636485B-082B-436E-BEA4-BAE16869D4D3}
