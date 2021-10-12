@@ -14,24 +14,34 @@ open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 
 open CompleteInformation.Core.Api
+open CompleteInformation.Core.PluginBase
 
 let getUser userId =
     match userId with
     | UserId 1u -> async { return Some { id = UserId 1u; name = "Nico" } }
     | _ -> async { return None }
 
-let userApi: IUserApi = { get = getUser }
-
-let remotingApi =
+let buildApi api =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder (sprintf "/api/%s/%s")
-    |> Remoting.fromValue userApi
+    |> Remoting.fromValue api
     |> Remoting.buildHttpHandler
 
-let webApp: HttpHandler =
+let getUserApi () =
+    let api: IUserApi = { get = getUser }
+    buildApi api
+
+let buildApis plugins =
+    let pluginApis =
+        List.map (fun (plugin: IWebserverPlugin) -> plugin.getApi) plugins
+
+    [ getUserApi; yield! pluginApis ]
+    |> List.map (fun build -> build ())
+
+let buildWebApp plugins =
     choose [
         route "/" >=> text "Server is running."
-        remotingApi
+        yield! buildApis plugins
         setStatusCode 404 >=> text "Not Found"
     ]
 
@@ -57,7 +67,7 @@ let configureCors (builder: CorsPolicyBuilder) =
         .AllowAnyHeader()
     |> ignore
 
-let configureApp (app: IApplicationBuilder) =
+let configureApp plugins (app: IApplicationBuilder) =
     let env =
         app.ApplicationServices.GetService<IWebHostEnvironment>()
 
@@ -76,7 +86,7 @@ let configureApp (app: IApplicationBuilder) =
     app
         .UseCors(configureCors)
         .UseStaticFiles()
-        .UseGiraffe(webApp)
+        .UseGiraffe(buildWebApp plugins)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -87,13 +97,12 @@ let configureLogging (builder: ILoggingBuilder) =
 
 [<EntryPoint>]
 let main args =
-    // At first, we have to determine the secret for our JWT Tokens
-    // TODO: generate
-    let secret =
-        "asdinf28hßrq82h389hr2_83h8h3r3.q30hq2893hrvq9ß23hc"
-
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
+
+    // TODO: We read out all plugins for the server
+    // https://docs.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
+    let plugins = []
 
     Host
         .CreateDefaultBuilder(args)
@@ -102,7 +111,7 @@ let main args =
                 .UseContentRoot(contentRoot)
                 .UseWebRoot(webRoot)
                 .UseUrls("http://localhost:8084")
-                .Configure(Action<IApplicationBuilder> configureApp)
+                .Configure(Action<IApplicationBuilder>(configureApp plugins))
                 .ConfigureServices(configureServices)
                 .ConfigureLogging(configureLogging)
             |> ignore)

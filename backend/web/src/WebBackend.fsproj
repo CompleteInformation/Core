@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\pluginbase\src\PluginBase.fsproj" />
     <ProjectReference Include="..\..\..\api\src\Api.fsproj" />
   </ItemGroup>
 
