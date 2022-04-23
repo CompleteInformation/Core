@@ -17,6 +17,8 @@ open Fable.Remoting.Giraffe
 open CompleteInformation.Core.Api
 open CompleteInformation.Core.PluginBase
 
+type Program = unit
+
 let getUser userId =
     match userId with
     | UserId 1u -> async { return Some { id = UserId 1u; name = "Nico" } }
@@ -36,10 +38,10 @@ let getUserApi () =
     buildApi api
 
 let buildApis plugins =
-    let pluginApis = List.map (fun (plugin: IWebserverPlugin) -> plugin.getApi) plugins
+    let pluginApis = Seq.map (fun (plugin: IWebserverPlugin) -> plugin.getApi) plugins
 
     [ getUserApi; yield! pluginApis ]
-    |> List.map (fun build -> build ())
+    |> Seq.map (fun build -> build ())
 
 let buildWebApp plugins =
     choose [
@@ -97,6 +99,70 @@ let configureServices (services: IServiceCollection) =
 let configureLogging (builder: ILoggingBuilder) =
     builder.AddConsole().AddDebug() |> ignore
 
+open System.IO
+open System.Reflection
+open System.Runtime.Loader
+
+type PluginLoadContext(pluginPath: string) =
+    inherit AssemblyLoadContext()
+
+    let resolver = new AssemblyDependencyResolver(pluginPath)
+
+    override this.Load(assemblyName: AssemblyName) =
+        resolver.ResolveAssemblyToPath(assemblyName)
+        |> Option.ofObj
+        |> function
+            | Some assemblyPath -> this.LoadFromAssemblyPath assemblyPath
+            | None -> null
+
+(*override this.LoadUnmanagedDll(unmanagedDllName: string) : IntPtr =
+        resolver.ResolveUnmanagedDllToPath(unmanagedDllName)
+        |> Option.ofObj
+        |> function
+            | Some libraryPath -> this.LoadUnmanagedDllFromPath libraryPath
+            | None -> IntPtr.Zero*)
+
+let loadPlugin (relativePath: string) =
+    let root =
+        typeof<Program>.Assembly.Location
+        |> Path.GetDirectoryName
+        |> Path.GetDirectoryName
+        |> Path.GetDirectoryName
+        |> Path.GetDirectoryName
+        |> Path.GetDirectoryName
+        |> Path.Combine
+        |> Path.GetFullPath
+
+    let pluginLocation =
+        Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar))
+        |> Path.GetFullPath
+
+    printfn "Loading commands from: %s" pluginLocation
+    let loadContext = new PluginLoadContext(pluginLocation)
+
+    let assemblyName =
+        new AssemblyName(Path.GetFileNameWithoutExtension(pluginLocation))
+
+    loadContext.LoadFromAssemblyName(assemblyName)
+
+let createPlugin (assembly: Assembly) =
+    assembly.GetTypes()
+    |> Array.choose (fun t ->
+        if typeof<IWebserverPlugin>.IsAssignableFrom (t) then
+            Activator.CreateInstance t
+            |> Option.ofObj
+            |> Option.map unbox<IWebserverPlugin>
+        else
+            None)
+    |> List.ofArray
+
+let loadPlugins () =
+    let pluginPath = "./plugins"
+    Directory.CreateDirectory pluginPath |> ignore
+
+    Directory.EnumerateFiles(pluginPath, "*.dll")
+    |> Seq.collect (loadPlugin >> createPlugin)
+
 [<EntryPoint>]
 let main args =
     let contentRoot = Directory.GetCurrentDirectory()
@@ -104,7 +170,7 @@ let main args =
 
     // TODO: We read out all plugins for the server
     // https://docs.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
-    let plugins = []
+    let plugins = loadPlugins ()
 
     Host
         .CreateDefaultBuilder(args)

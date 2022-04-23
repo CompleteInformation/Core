@@ -18,7 +18,7 @@ module Index =
         |> Remoting.buildProxy<IUserApi>
 
     let init () : Model * Cmd<Msg> =
-        let model = { text = "start" }
+        let model = { text = "" }
 
         let cmd = Cmd.none
 
@@ -61,11 +61,11 @@ module Index =
             Bulma.field.div [
                 field.isGrouped
                 prop.children [
-                    Bulma.text.p [ prop.text model.text ]
                     Bulma.button.button [
                         prop.text "Fetch"
                         prop.onClick (fun _ -> GetUser(UserId 1u) |> dispatch)
                     ]
+                    Bulma.text.p [ prop.text model.text ]
                 ]
             ]
         ]
