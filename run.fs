@@ -1,3 +1,5 @@
+open Fake.Core
+
 open RunHelpers
 open RunHelpers.BasicShortcuts
 open RunHelpers.Templates
@@ -5,6 +7,19 @@ open RunHelpers.Templates
 [<RequireQualifiedAccess>]
 module Config =
     let backendProject = $"backend/web/src/WebBackend.fsproj"
+
+let startAsJob errorCode (proc: CreateProcess<ProcessResult<unit>>) =
+    printfn $"> %s{proc.CommandLine}"
+    let task = proc |> Proc.start
+
+    async {
+        let! result = task |> Async.AwaitTask
+
+        return
+            match result.ExitCode with
+            | 0 -> Ok
+            | _ -> Error(errorCode, [])
+    }
 
 module Task =
     let restore () =
@@ -14,8 +29,11 @@ module Task =
         DotNet.build Config.backendProject Debug
 
     let build () = job { buildWebServer () }
-    (*let serveWebClient () =
-        executeShellCommand "cd frontend/web && npm run start"*)
+
+    let serveWebClient () =
+        CreateProcess.fromRawCommand "npm" [ "run"; "start" ]
+        |> CreateProcess.withWorkingDirectory "frontend/web"
+        |> Job.fromCreateProcess Constant.errorExitCode
 
     let serveWebServer () =
         dotnet [
@@ -24,6 +42,12 @@ module Task =
             "--project"
             Config.backendProject
         ]
+
+    let serveWeb () =
+        parallelJob {
+            serveWebClient ()
+            serveWebServer ()
+        }
 
 [<EntryPoint>]
 let main args =
@@ -38,11 +62,11 @@ let main args =
             }
         | [ "serve"; "web" ]
         | [ "serve" ]
-        | [] -> Task.serveWebServer ()
+        | [] -> Task.serveWeb ()
         | _ ->
             let msg =
                 [ "Usage: dotnet run [<command>]"
                   "Look up available commands in run.fs" ]
 
-            Error(1, msg)
-    |> ProcessResult.wrapUp
+            Job.error 1 msg
+    |> Job.execute
