@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
+
 open Giraffe
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
@@ -28,12 +29,14 @@ let buildApi api =
     |> Remoting.buildHttpHandler
 
 let getUserApi () =
-    let api: IUserApi = { get = getUser }
+    let api: IUserApi =
+        { geti = getUser (UserId 1u)
+          get = getUser }
+
     buildApi api
 
 let buildApis plugins =
-    let pluginApis =
-        List.map (fun (plugin: IWebserverPlugin) -> plugin.getApi) plugins
+    let pluginApis = List.map (fun (plugin: IWebserverPlugin) -> plugin.getApi) plugins
 
     [ getUserApi; yield! pluginApis ]
     |> List.map (fun build -> build ())
@@ -68,8 +71,7 @@ let configureCors (builder: CorsPolicyBuilder) =
     |> ignore
 
 let configureApp plugins (app: IApplicationBuilder) =
-    let env =
-        app.ApplicationServices.GetService<IWebHostEnvironment>()
+    let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
 
     let app =
         match env.IsDevelopment() with
@@ -108,6 +110,7 @@ let main args =
         .CreateDefaultBuilder(args)
         .ConfigureWebHostDefaults(fun webHostBuilder ->
             webHostBuilder
+                .UseKestrel()
                 .UseContentRoot(contentRoot)
                 .UseWebRoot(webRoot)
                 .UseUrls("http://localhost:8084")

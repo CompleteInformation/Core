@@ -1,52 +1,48 @@
-open System.Diagnostics
+open RunHelpers
+open RunHelpers.BasicShortcuts
+open RunHelpers.Templates
 
-type CommandResult = {
-  exitCode: int;
-}
+[<RequireQualifiedAccess>]
+module Config =
+    let backendProject = $"backend/web/src/WebBackend.fsproj"
 
-let executeCommand executable args =
-  async {
-    let startInfo = ProcessStartInfo()
-    startInfo.FileName <- executable
-    for a in args do
-      startInfo.ArgumentList.Add(a)
-    startInfo.RedirectStandardOutput <- false
-    startInfo.RedirectStandardError <- false
-    startInfo.UseShellExecute <- false
-    startInfo.CreateNoWindow <- true
-    use p = new Process()
-    p.StartInfo <- startInfo
-    p.Start() |> ignore
+module Task =
+    let restore () =
+        DotNet.restoreWithTools Config.backendProject
 
-    do! p.WaitForExitAsync() |> Async.AwaitTask
-    return {
-      exitCode = p.ExitCode;
-    }
-  }
+    let buildWebServer () =
+        DotNet.build Config.backendProject Debug
 
-let executeShellCommand command =
-  executeCommand "/usr/bin/env" [ "-S"; "bash"; "-c"; command ]
+    let build () = job { buildWebServer () }
+    (*let serveWebClient () =
+        executeShellCommand "cd frontend/web && npm run start"*)
 
-let serveWebClient () =
-    executeShellCommand "cd frontend/web && npm run start"
-
-let serveWebServer () =
-    executeShellCommand "cd backend/web/src && dotnet watch run"
-
-let serveWeb () =
-    [ serveWebClient (); serveWebServer () ]
-    |> Async.Parallel
-    |> Async.RunSynchronously
-    |> ignore
+    let serveWebServer () =
+        dotnet [
+            "watch"
+            "run"
+            "--project"
+            Config.backendProject
+        ]
 
 [<EntryPoint>]
-let main argv =
-    match List.ofArray argv with
-    | cmd :: args ->
-        match cmd, args with
-        | "serve", [ "web" ]
-        | "serve", [] ->
-            serveWeb ()
-        | _ -> printfn "Unknown command/arg combination"
-    | _ -> printfn "Enter command"
-    0 // return an integer exit code
+let main args =
+    args
+    |> List.ofArray
+    |> function
+        | [ "restore" ] -> Task.restore ()
+        | [ "build" ] ->
+            job {
+                Task.restore ()
+                Task.build ()
+            }
+        | [ "serve"; "web" ]
+        | [ "serve" ]
+        | [] -> Task.serveWebServer ()
+        | _ ->
+            let msg =
+                [ "Usage: dotnet run [<command>]"
+                  "Look up available commands in run.fs" ]
+
+            Error(1, msg)
+    |> ProcessResult.wrapUp

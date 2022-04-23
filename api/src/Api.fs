@@ -1,3 +1,5 @@
 namespace CompleteInformation.Core.Api
 
-type IUserApi = { get: UserId -> Async<User option> }
+type IUserApi =
+    { geti: Async<User option>
+      get: UserId -> Async<User option> }
