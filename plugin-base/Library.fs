@@ -9,5 +9,5 @@ module PluginId =
 type PluginMetadata = { id: PluginId; name: string }
 
 type WebserverPlugin =
-    abstract member getApi: unit -> 'a
+    abstract member getApi: unit -> obj
     abstract member getMetaData: unit -> PluginMetadata
