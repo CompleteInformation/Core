@@ -12,6 +12,7 @@ module Config =
     let backendProject = "backend/web/WebBackend.fsproj"
     let frontendProject = "frontend/web/WebFrontend.fsproj"
     let frontendDeployPath = "frontend/web/deploy"
+    let packPath = "./pack"
     let publishPath = "./publish"
 
 module Task =
@@ -123,6 +124,11 @@ let main args =
             job {
                 Task.restore ()
                 Task.serveWeb ()
+            }
+        | [ "serve"; "web-server" ] ->
+            job {
+                Task.restore ()
+                Task.serveWebServer ()
             }
         | [ "publish" ] ->
             job {

@@ -15,15 +15,11 @@ open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 
 open CompleteInformation.Core.Api
-open CompleteInformation.Core.PluginBase
+open CompleteInformation.PluginBase
 
 type Program = unit
 
-let buildApi api =
-    Remoting.createApi ()
-    |> Remoting.withRouteBuilder (sprintf "/api/%s/%s")
-    |> Remoting.fromValue api
-    |> Remoting.buildHttpHandler
+let routeBuilder = sprintf "/api/%s/%s"
 
 let getPluginApi plugins =
     let getPlugins () =
@@ -36,16 +32,16 @@ let getPluginApi plugins =
 
     let api: PluginApi = { get = getPlugins }
 
-    buildApi api
+    Api.build api
 
 let buildApis plugins =
-    let pluginApis =
-        Seq.map (fun (plugin: WebserverPlugin) -> plugin.getApi () |> buildApi) plugins
+    let pluginApis = Seq.map (fun (plugin: WebserverPlugin) -> plugin.getApi) plugins
 
     [
         getPluginApi plugins
         yield! pluginApis
     ]
+    |> Seq.map (fun f -> f routeBuilder)
 
 let buildWebApp plugins =
     choose [
@@ -109,7 +105,6 @@ let configureServices (services: IServiceCollection) =
 let configureLogging (builder: ILoggingBuilder) =
     builder.AddConsole().AddDebug() |> ignore
 
-open System.IO
 open System.Reflection
 open System.Runtime.Loader
 
@@ -125,40 +120,26 @@ type PluginLoadContext(pluginPath: string) =
             | Some assemblyPath -> this.LoadFromAssemblyPath assemblyPath
             | None -> null
 
-(*override this.LoadUnmanagedDll(unmanagedDllName: string) : IntPtr =
-        resolver.ResolveUnmanagedDllToPath(unmanagedDllName)
-        |> Option.ofObj
-        |> function
-            | Some libraryPath -> this.LoadUnmanagedDllFromPath libraryPath
-            | None -> IntPtr.Zero*)
+    override this.LoadUnmanagedDll(unmanagedDllName: string) =
+        let libraryPath = resolver.ResolveUnmanagedDllToPath(unmanagedDllName)
 
-let loadPlugin (relativePath: string) =
-    let root =
-        typeof<Program>.Assembly.Location
-        |> Path.GetDirectoryName
-        |> Path.GetDirectoryName
-        |> Path.GetDirectoryName
-        |> Path.GetDirectoryName
-        |> Path.GetDirectoryName
-        |> Path.Combine
-        |> Path.GetFullPath
+        if not (libraryPath = null) then
+            this.LoadUnmanagedDllFromPath libraryPath
+        else
+            IntPtr.Zero
 
-    let pluginLocation =
-        Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar))
-        |> Path.GetFullPath
+let loadPlugin (pluginPath: string) =
+    printfn "Loading plugin from: %s" pluginPath
+    let loadContext = new PluginLoadContext(pluginPath)
 
-    printfn "Loading commands from: %s" pluginLocation
-    let loadContext = new PluginLoadContext(pluginLocation)
-
-    let assemblyName =
-        new AssemblyName(Path.GetFileNameWithoutExtension(pluginLocation))
+    let assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(pluginPath))
 
     loadContext.LoadFromAssemblyName(assemblyName)
 
 let createPlugin (assembly: Assembly) =
     assembly.GetTypes()
     |> Array.choose (fun t ->
-        if typeof<WebserverPlugin>.IsAssignableFrom (t) then
+        if t.IsAssignableTo typeof<WebserverPlugin> then
             Activator.CreateInstance t
             |> Option.ofObj
             |> Option.map unbox<WebserverPlugin>
@@ -170,15 +151,22 @@ let loadPlugins () =
     let pluginPath = "./plugins"
     Directory.CreateDirectory pluginPath |> ignore
 
-    Directory.EnumerateFiles(pluginPath, "*.dll")
+    Directory.EnumerateFiles(pluginPath, "*.plugin.dll", SearchOption.AllDirectories)
     |> Seq.collect (loadPlugin >> createPlugin)
+    |> (fun plugins ->
+        printfn
+            "Loaded plugins: %s"
+            (plugins
+             |> Seq.map (fun plugin -> plugin.getMetaData().name)
+             |> String.concat ",")
+
+        plugins)
 
 [<EntryPoint>]
 let main args =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
 
-    // TODO: We read out all plugins for the server
     // https://docs.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
     let plugins = loadPlugins ()
 

@@ -14,7 +14,6 @@
     <None Include="web.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\plugin-base\PluginBase.fsproj" />
     <ProjectReference Include="..\..\api\Api.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

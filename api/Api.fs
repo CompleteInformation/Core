@@ -1,6 +1,6 @@
 namespace CompleteInformation.Core.Api
 
-open CompleteInformation.Core.PluginBase
+open CompleteInformation.PluginBase
 
 type PluginApi =
     {

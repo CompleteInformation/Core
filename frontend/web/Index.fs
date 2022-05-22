@@ -4,10 +4,14 @@ open Elmish
 open Fable.Remoting.Client
 
 open CompleteInformation.Core.Api
-open CompleteInformation.Core.PluginBase
+open CompleteInformation.PluginBase
 
 module Index =
-    type Model = { plugins: PluginMetadata list }
+    type Model =
+        {
+            /// List of installed plugins, if None they are still loading
+            plugins: PluginMetadata list option
+        }
 
     type Msg =
         | GetPlugins
@@ -19,7 +23,7 @@ module Index =
         |> Remoting.buildProxy<PluginApi>
 
     let init () : Model * Cmd<Msg> =
-        let model = { plugins = [] }
+        let model = { plugins = None }
 
         let cmd = Cmd.ofMsg GetPlugins
 
@@ -31,7 +35,7 @@ module Index =
             let cmd = Cmd.OfAsync.perform pluginApi.get () SetPlugins
 
             model, cmd
-        | SetPlugins plugins -> { model with plugins = plugins }, Cmd.none
+        | SetPlugins plugins -> { model with plugins = Some plugins }, Cmd.none
 
     open Feliz
     open Feliz.Bulma
@@ -64,15 +68,17 @@ module Index =
                 prop.text "Welcome to Complete Information, your central place for managing your data."
             ]
             // Give a hint if there are no plugins
-            if Seq.isEmpty plugins then
+            match plugins with
+            | Some plugins when Seq.isEmpty plugins ->
                 Bulma.block [
                     prop.text
                         "It looks like you have no plugins installed. Download some and put them in the plugins and WebRoot/plugins folder."
                 ]
+            | _ -> ()
         ]
 
     let view (model: Model) (dispatch: Msg -> unit) =
         Html.div [
-            navBar model.plugins
+            navBar (Option.defaultValue [] model.plugins)
             Bulma.container (content model.plugins)
         ]

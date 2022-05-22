@@ -4,6 +4,7 @@ storage: none
 framework: auto-detect
 
 nuget FSharp.Core content: none
+nuget NicoVIII.CompleteInformation.PluginBase
 
 # Server
 nuget Fable.Remoting.Giraffe
