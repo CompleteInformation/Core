@@ -5,16 +5,19 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"NODE_VERSION": "lts/*",
+			"NODE_VERSION": "lts/*"
 		}
 	},
 	// Set *default* container specific settings.json values on container create.
-	"settings": {},
+	"settings": {
+		"FSharp.dotnetRoot": "/usr/bin"
+	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"editorconfig.editorconfig",
 		"Ionide.Ionide-fsharp",
 		"ms-dotnettools.csharp",
+		"github.copilot"
 	],
 	"containerEnv": {
 		"ASPNETCORE_ENVIRONMENT": "Development"
@@ -22,7 +25,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "dotnet tool restore && dotnet paket restore && dotnet restore CI-Core.sln",
+	"postCreateCommand": "dotnet run restore",
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
 }

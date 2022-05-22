@@ -1,29 +1,22 @@
 open Fake.Core
 
 open RunHelpers
-open RunHelpers.BasicShortcuts
+open RunHelpers.Shortcuts
 open RunHelpers.Templates
 
 [<RequireQualifiedAccess>]
 module Config =
     let backendProject = $"backend/web/src/WebBackend.fsproj"
 
-let startAsJob errorCode (proc: CreateProcess<ProcessResult<unit>>) =
-    printfn $"> %s{proc.CommandLine}"
-    let task = proc |> Proc.start
-
-    async {
-        let! result = task |> Async.AwaitTask
-
-        return
-            match result.ExitCode with
-            | 0 -> Ok
-            | _ -> Error(errorCode, [])
-    }
-
 module Task =
     let restore () =
-        DotNet.restoreWithTools Config.backendProject
+        job {
+            DotNet.restoreWithTools Config.backendProject
+
+            CreateProcess.fromRawCommand "npm" [ "install" ]
+            |> CreateProcess.withWorkingDirectory "./frontend/web"
+            |> Job.fromCreateProcess
+        }
 
     let buildWebServer () =
         DotNet.build Config.backendProject Debug
@@ -32,8 +25,8 @@ module Task =
 
     let serveWebClient () =
         CreateProcess.fromRawCommand "npm" [ "run"; "start" ]
-        |> CreateProcess.withWorkingDirectory "frontend/web"
-        |> Job.fromCreateProcess Constant.errorExitCode
+        |> CreateProcess.withWorkingDirectory "./frontend/web"
+        |> Job.fromCreateProcess
 
     let serveWebServer () =
         dotnet [
@@ -62,11 +55,14 @@ let main args =
             }
         | [ "serve"; "web" ]
         | [ "serve" ]
-        | [] -> Task.serveWeb ()
+        | [] ->
+            job {
+                Task.restore ()
+                Task.serveWeb ()
+            }
         | _ ->
-            let msg =
-                [ "Usage: dotnet run [<command>]"
-                  "Look up available commands in run.fs" ]
-
-            Job.error 1 msg
+            Job.error [
+                "Usage: dotnet run [<command>]"
+                "Look up available commands in run.fs"
+            ]
     |> Job.execute
