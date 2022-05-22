@@ -30,7 +30,7 @@ let getPluginApi plugins =
         async {
             return
                 plugins
-                |> Seq.map (fun (plugin: WebserverPlugin) -> plugin.getId ())
+                |> Seq.map (fun (plugin: WebserverPlugin) -> plugin.getMetaData ())
                 |> List.ofSeq
         }
 
