@@ -32,8 +32,10 @@ let buildApi api =
 
 let getUserApi () =
     let api: IUserApi =
-        { geti = getUser (UserId 1u)
-          get = getUser }
+        {
+            geti = getUser (UserId 1u)
+            get = getUser
+        }
 
     buildApi api
 
@@ -45,7 +47,11 @@ let buildApis plugins =
 
 let buildWebApp plugins =
     choose [
+#if DEBUG
         route "/" >=> text "Server is running."
+#else
+        route "/" >=> redirectTo true "/index.html"
+#endif
         yield! buildApis plugins
         setStatusCode 404 >=> text "Not Found"
     ]

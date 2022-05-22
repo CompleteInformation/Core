@@ -1,13 +1,17 @@
 name: Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
 
 jobs:
   build:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        dotnet: [6.0.200]
+        dotnet: [6.0.300]
     runs-on: ${{ matrix.os }}
 
     steps:

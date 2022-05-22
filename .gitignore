@@ -6,3 +6,6 @@ output/
 
 .ionide/
 .fake/
+
+deploy/
+publish/
