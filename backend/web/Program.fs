@@ -19,31 +19,33 @@ open CompleteInformation.Core.PluginBase
 
 type Program = unit
 
-let getUser userId =
-    match userId with
-    | UserId 1u -> async { return Some { id = UserId 1u; name = "Nico" } }
-    | _ -> async { return None }
-
 let buildApi api =
     Remoting.createApi ()
     |> Remoting.withRouteBuilder (sprintf "/api/%s/%s")
     |> Remoting.fromValue api
     |> Remoting.buildHttpHandler
 
-let getUserApi () =
-    let api: IUserApi =
-        {
-            geti = getUser (UserId 1u)
-            get = getUser
+let getPluginApi plugins =
+    let getPlugins () =
+        async {
+            return
+                plugins
+                |> Seq.map (fun (plugin: WebserverPlugin) -> plugin.getId ())
+                |> List.ofSeq
         }
+
+    let api: PluginApi = { get = getPlugins }
 
     buildApi api
 
 let buildApis plugins =
-    let pluginApis = Seq.map (fun (plugin: IWebserverPlugin) -> plugin.getApi) plugins
+    let pluginApis =
+        Seq.map (fun (plugin: WebserverPlugin) -> plugin.getApi () |> buildApi) plugins
 
-    [ getUserApi; yield! pluginApis ]
-    |> Seq.map (fun build -> build ())
+    [
+        getPluginApi plugins
+        yield! pluginApis
+    ]
 
 let buildWebApp plugins =
     choose [
@@ -85,7 +87,10 @@ let configureApp plugins (app: IApplicationBuilder) =
         match env.IsDevelopment() with
         | true ->
             printfn "Development mode"
-            app.UseDeveloperExceptionPage()
+
+            app
+                .UseDeveloperExceptionPage()
+                .UseCors(configureCors)
         | false ->
             printfn "Production mode"
 
@@ -94,7 +99,6 @@ let configureApp plugins (app: IApplicationBuilder) =
                 .UseHttpsRedirection()
 
     app
-        .UseCors(configureCors)
         .UseStaticFiles()
         .UseGiraffe(buildWebApp plugins)
 
@@ -154,10 +158,10 @@ let loadPlugin (relativePath: string) =
 let createPlugin (assembly: Assembly) =
     assembly.GetTypes()
     |> Array.choose (fun t ->
-        if typeof<IWebserverPlugin>.IsAssignableFrom (t) then
+        if typeof<WebserverPlugin>.IsAssignableFrom (t) then
             Activator.CreateInstance t
             |> Option.ofObj
-            |> Option.map unbox<IWebserverPlugin>
+            |> Option.map unbox<WebserverPlugin>
         else
             None)
     |> List.ofArray

@@ -4,7 +4,7 @@ const CONFIG = {
     indexHtmlTemplate: './index.html',
     fsharpEntry: './output/App.js',
     outputDir: './deploy/public',
-    assetsDir: './src/public',
+    assetsDir: './public',
     devServerPort: 8082,
     // When using webpack-dev-server, you may need to redirect some calls
     // to a external API server. See https://webpack.js.org/configuration/dev-server/#devserver-proxy

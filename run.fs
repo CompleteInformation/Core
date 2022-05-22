@@ -9,8 +9,8 @@ open System.IO
 
 [<RequireQualifiedAccess>]
 module Config =
-    let backendProject = "backend/web/src/WebBackend.fsproj"
-    let frontendProject = "frontend/web/src/WebFrontend.fsproj"
+    let backendProject = "backend/web/WebBackend.fsproj"
+    let frontendProject = "frontend/web/WebFrontend.fsproj"
     let frontendDeployPath = "frontend/web/deploy"
     let publishPath = "./publish"
 

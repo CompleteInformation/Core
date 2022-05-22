@@ -9,13 +9,13 @@ module Index =
     type Model = { text: string }
 
     type Msg =
-        | GetUser of UserId
+        | GetPlugins
         | SetText of string
 
-    let todosApi =
+    let pluginApi =
         Remoting.createApi ()
         |> Remoting.withBaseUrl "http://localhost:8084/api"
-        |> Remoting.buildProxy<IUserApi>
+        |> Remoting.buildProxy<PluginApi>
 
     let init () : Model * Cmd<Msg> =
         let model = { text = "" }
@@ -26,15 +26,8 @@ module Index =
 
     let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         match msg with
-        | GetUser userId ->
-            let cmd =
-                Cmd.OfAsync.perform
-                    todosApi.get
-                    userId
-                    (function
-                     | Some user -> user.name
-                     | None -> "error"
-                     >> SetText)
+        | GetPlugins ->
+            let cmd = Cmd.OfAsync.perform pluginApi.get () (String.concat "," >> SetText)
 
             model, cmd
         | SetText text -> { model with text = text }, Cmd.none
@@ -63,7 +56,7 @@ module Index =
                 prop.children [
                     Bulma.button.button [
                         prop.text "Fetch"
-                        prop.onClick (fun _ -> GetUser(UserId 1u) |> dispatch)
+                        prop.onClick (fun _ -> GetPlugins |> dispatch)
                     ]
                     Bulma.text.p [ prop.text model.text ]
                 ]

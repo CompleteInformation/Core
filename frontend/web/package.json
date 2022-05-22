@@ -5,9 +5,9 @@
         "npm": "~8"
     },
     "scripts": {
-        "start": "dotnet fable watch src/ -o output -s --run webpack-dev-server",
-        "build": "dotnet fable src/ -o output -s --run webpack",
-        "build-prod": "dotnet fable src/ -o output -s --run webpack --mode production"
+        "start": "dotnet fable watch . -o output -s --run webpack-dev-server",
+        "build": "dotnet fable . -o output -s --run webpack",
+        "build-prod": "dotnet fable . -o output -s --run webpack --mode production"
     },
     "devDependencies": {
         "copy-webpack-plugin": "^10.0.0",
