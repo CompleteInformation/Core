@@ -1,0 +1,10 @@
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <Authors>NicoVIII</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/CompleteInformation/Core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/CompleteInformation/Core</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+</Project>

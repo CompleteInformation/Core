@@ -17,7 +17,8 @@
 		"editorconfig.editorconfig",
 		"Ionide.Ionide-fsharp",
 		"ms-dotnettools.csharp",
-		"github.copilot"
+		"github.copilot",
+		"bierner.markdown-mermaid"
 	],
 	"containerEnv": {
 		"ASPNETCORE_ENVIRONMENT": "Development"

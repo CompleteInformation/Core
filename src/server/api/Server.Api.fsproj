@@ -8,5 +8,8 @@
   <ItemGroup>
     <Compile Include="Api.fs" />
   </ItemGroup>
-  <Import Project="..\.paket\Paket.Restore.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\core\Shared.Core.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

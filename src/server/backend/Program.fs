@@ -11,11 +11,9 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 
 open Giraffe
-open Fable.Remoting.Server
-open Fable.Remoting.Giraffe
 
-open CompleteInformation.Core.Api
-open CompleteInformation.PluginBase
+open CompleteInformation.Server.Api
+open CompleteInformation.Shared.Backend.Web
 
 type Program = unit
 

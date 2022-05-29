@@ -9,39 +9,58 @@ open System.IO
 
 [<RequireQualifiedAccess>]
 module Config =
-    let backendProject = "backend/web/WebBackend.fsproj"
-    let frontendProject = "frontend/web/WebFrontend.fsproj"
-    let frontendDeployPath = "frontend/web/deploy"
+    let serverBackend = "./src/server/backend/"
+    let serverFrontend = "./src/server/frontend/"
+
+    let dotnetProjects =
+        [
+            serverBackend
+            "./src/plugin-lib/backend/web/"
+            "./src/plugin-lib/frontend/web/"
+        ]
+
+    let npmProjects = [ serverFrontend ]
+
+    let allProjects = [ dotnetProjects; npmProjects ] |> Seq.concat
+
     let packPath = "./pack"
     let publishPath = "./publish"
+
+    // List of plugins which should be downloaded when serving the web app
+    let plugins = []
 
 module Task =
     let restore () =
         job {
-            DotNet.restoreWithTools Config.backendProject
+            DotNet.toolRestore ()
 
-            CreateProcess.fromRawCommand "npm" [ "install" ]
-            |> CreateProcess.withWorkingDirectory "./frontend/web"
-            |> Job.fromCreateProcess
+            // Restore via dotnet
+            for project in Config.allProjects do
+                DotNet.restore project
+
+            // Restore via npm
+            for project in Config.npmProjects do
+                CreateProcess.fromRawCommand "npm" [ "install" ]
+                |> CreateProcess.withWorkingDirectory project
+                |> Job.fromCreateProcess
         }
-
-    let buildWebClient config =
-        let cmd =
-            match config with
-            | Debug -> "build"
-            | Release -> "build-prod"
-
-        CreateProcess.fromRawCommand "npm" [ "run"; cmd ]
-        |> CreateProcess.withWorkingDirectory "./frontend/web"
-        |> Job.fromCreateProcess
-
-    let buildWebServer config =
-        DotNet.build Config.backendProject config
 
     let build config =
         job {
-            buildWebClient config
-            buildWebServer config
+            // Build dotnet projects
+            for project in Config.dotnetProjects do
+                DotNet.build project config
+
+            // Build npm projects
+            let cmd =
+                match config with
+                | Debug -> "build"
+                | Release -> "build-prod"
+
+            for project in Config.npmProjects do
+                CreateProcess.fromRawCommand "npm" [ "run"; cmd ]
+                |> CreateProcess.withWorkingDirectory project
+                |> Job.fromCreateProcess
         }
 
     let serveWebClient () =
@@ -54,7 +73,7 @@ module Task =
             "watch"
             "run"
             "--project"
-            Config.backendProject
+            Config.serverBackend
         ]
 
     let serveWeb () =
@@ -66,26 +85,22 @@ module Task =
     let publish () =
         job {
             // Cleanup
-            [
-                Config.publishPath
-                Config.frontendDeployPath
-            ]
-            |> Shell.cleanDirs
+            Shell.cleanDir Config.publishPath
 
-            DotNet.publishSelfContained Config.publishPath Config.backendProject LinuxX64
+            DotNet.publishSelfContained Config.publishPath Config.serverBackend LinuxX64
 
             // Remove all the *.xml files nobody needs
             Directory.EnumerateFiles(Config.publishPath, "*.xml")
             |> Seq.iter (Shell.rm)
 
-            // Build frontend and copy it to webroot
-            buildWebClient Release
-
             Directory.CreateDirectory $"{Config.publishPath}/WebRoot"
             |> ignore
 
-            Shell.copyRecursiveTo false $"{Config.publishPath}/WebRoot" $"{Config.frontendDeployPath}/public"
+            Shell.copyRecursiveTo false $"{Config.publishPath}/WebRoot" $"{Config.serverFrontend}/deploy/public"
             |> ignore
+
+            // Remove plugins, if there are some installed for testing
+            Shell.deleteDir $"{Config.publishPath}/WebRoot/plugins"
 
             // Bundle it up
             let archive = "./CompleteInformation.tar.lz"
@@ -103,7 +118,6 @@ module Task =
                         filePath
                     ]
 
-            Shell.cleanDir Config.publishPath
             Shell.mv archive Config.publishPath
         }
 
@@ -133,6 +147,7 @@ let main args =
         | [ "publish" ] ->
             job {
                 Task.restore ()
+                Task.build Release
                 Task.publish ()
             }
         | _ ->
