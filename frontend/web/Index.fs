@@ -1,10 +1,23 @@
 namespace CompleteInformation.Core.Frontend.Web
 
 open Elmish
+open Fable.Core
 open Fable.Remoting.Client
 
 open CompleteInformation.Core.Api
 open CompleteInformation.PluginBase
+
+module Native =
+    [<Global>]
+    let loadPlugin: (string -> unit) = jsNative
+
+    [<Global>]
+    let activatePlugin: (string -> unit) = jsNative
+
+[<AutoOpen>]
+module NativeWrapper =
+    let loadPlugin = PluginId.unwrap >> Native.loadPlugin
+    let activatePlugin = PluginId.unwrap >> Native.activatePlugin
 
 module Index =
     type Model =
@@ -15,7 +28,8 @@ module Index =
 
     type Msg =
         | GetPlugins
-        | SetPlugins of PluginMetadata list
+        | OnPluginsLoaded of PluginMetadata list
+        | ActivatePlugin of PluginId
 
     let pluginApi =
         Remoting.createApi ()
@@ -32,32 +46,31 @@ module Index =
     let update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         match msg with
         | GetPlugins ->
-            let cmd = Cmd.OfAsync.perform pluginApi.get () SetPlugins
+            let cmd = Cmd.OfAsync.perform pluginApi.get () OnPluginsLoaded
 
             model, cmd
-        | SetPlugins plugins -> { model with plugins = Some plugins }, Cmd.none
+        | OnPluginsLoaded plugins -> { model with plugins = Some plugins }, Cmd.none
+        | ActivatePlugin id ->
+            activatePlugin id
+
+            model, Cmd.none
 
     open Feliz
     open Feliz.Bulma
 
-    let navItems plugins =
+    let navItems dispatch plugins =
         [
-            for plugin: PluginMetadata in plugins do
-                let pluginId = PluginId.unwrap plugin.id
-
-                Bulma.navbarItem.a [
-                    prop.href $"/plugin/{pluginId}/index.html"
+            for plugin in plugins do
+                Bulma.navbarItem.div [
                     prop.text plugin.name
+                    prop.onClick (fun _ -> ActivatePlugin plugin.id |> dispatch)
                 ]
         ]
 
-    let navBar plugins =
+    let navBar dispatch plugins =
         Bulma.navbar [
             Bulma.navbarMenu [
-                Bulma.navbarStart.div [
-                    for item in navItems plugins do
-                        item
-                ]
+                Bulma.navbarStart.div (navItems dispatch plugins)
             ]
         ]
 
@@ -79,6 +92,9 @@ module Index =
 
     let view (model: Model) (dispatch: Msg -> unit) =
         Html.div [
-            navBar (Option.defaultValue [] model.plugins)
-            Bulma.container (content model.plugins)
+            navBar dispatch (Option.defaultValue [] model.plugins)
+            Bulma.container [
+                prop.id "main-container"
+                prop.children (content model.plugins)
+            ]
         ]
