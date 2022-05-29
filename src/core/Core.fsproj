@@ -6,16 +6,16 @@
     <WarnOn>3390;$(WarnOn)</WarnOn>
   </PropertyGroup>
   <PropertyGroup>
-    <Product>NicoVIII.CompleteInformation.PluginBase.Backend.Web</Product>
-    <PackageId>NicoVIII.CompleteInformation.PluginBase.Backend.Web</PackageId>
-    <Title>CompleteInformation.PluginBase.Backend.Web</Title>
+    <Product>NicoVIII.CompleteInformation.Shared</Product>
+    <PackageId>NicoVIII.CompleteInformation.Shared</PackageId>
+    <Title>CompleteInformation.Shared</Title>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="PluginMetadata.fs" />
   </ItemGroup>
   <!-- Add source files to "fable" folder in Nuget package -->
   <ItemGroup>
     <Content Include="*.fsproj; **\*.fs; **\*.fsi" PackagePath="fable\" />
   </ItemGroup>
-  <Import Project="..\..\..\..\.paket\Paket.Restore.targets" />
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -1,4 +1,4 @@
-namespace CompleteInformation.Shared.Core
+namespace CompleteInformation.Core
 
 type PluginId = PluginId of string
 

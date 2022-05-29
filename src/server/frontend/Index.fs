@@ -4,8 +4,8 @@ open Elmish
 open Fable.Core
 open Fable.Remoting.Client
 
+open CompleteInformation.Core
 open CompleteInformation.Server.Api
-open CompleteInformation.Shared.Core
 
 module Native =
     [<Global>]

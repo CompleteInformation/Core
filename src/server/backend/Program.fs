@@ -13,7 +13,7 @@ open Microsoft.Extensions.DependencyInjection
 open Giraffe
 
 open CompleteInformation.Server.Api
-open CompleteInformation.Shared.Backend.Web
+open CompleteInformation.Base.Backend.Web
 
 type Program = unit
 

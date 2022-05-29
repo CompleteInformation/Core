@@ -15,8 +15,7 @@ module Config =
     let dotnetProjects =
         [
             serverBackend
-            "./src/plugin-lib/backend/web/"
-            "./src/plugin-lib/frontend/web/"
+            "./src/base/frontend/web/"
         ]
 
     let npmProjects = [ serverFrontend ]

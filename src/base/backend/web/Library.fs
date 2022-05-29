@@ -1,6 +1,6 @@
-﻿namespace CompleteInformation.Shared.Backend.Web
+﻿namespace CompleteInformation.Base.Backend.Web
 
-open CompleteInformation.Shared.Core
+open CompleteInformation.Core
 
 [<RequireQualifiedAccess>]
 module Api =
