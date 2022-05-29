@@ -11,6 +11,7 @@
     <Title>CompleteInformation.Shared</Title>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Constant.fs" />
     <Compile Include="PluginMetadata.fs" />
   </ItemGroup>
   <!-- Add source files to "fable" folder in Nuget package -->

@@ -4,6 +4,8 @@ open Elmish
 open Elmish.React
 open Fable.Remoting.Client
 
+open CompleteInformation.Core
+
 [<RequireQualifiedAccess>]
 module Api =
     let createBase () =
@@ -13,4 +15,4 @@ module Api =
 [<RequireQualifiedAccess>]
 module Program =
     let mount program =
-        Program.withReactSynchronous "module-slot" program
+        Program.withReactSynchronous Constant.moduleSlotId program
