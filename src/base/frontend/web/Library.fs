@@ -6,10 +6,9 @@ open Fable.Remoting.Client
 
 [<RequireQualifiedAccess>]
 module Api =
-    let buildProxy<'Api> () =
+    let createBase () =
         Remoting.createApi ()
         |> Remoting.withBaseUrl "http://localhost:8084/api"
-        |> Remoting.buildProxy<'Api>
 
 [<RequireQualifiedAccess>]
 module Program =
