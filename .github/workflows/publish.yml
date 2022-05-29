@@ -35,4 +35,4 @@ jobs:
           title: Continuous Build
           files: |
             LICENSE.txt
-            publish/*
+            publish/CompleteInformation.tar.lz
