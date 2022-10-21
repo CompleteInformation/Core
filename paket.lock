@@ -94,6 +94,9 @@ NUGET
       Fable.AST (>= 3.0)
       FSharp.Core (>= 4.7.2)
     FSharp.Core (6.0) - content: none
+    FSharp.SystemTextJson (1.0.6)
+      FSharp.Core (>= 4.7)
+      System.Text.Json (>= 6.0)
     Fulma (2.16)
       Fable.Core (>= 3.2.6)
       Fable.React (>= 7.4)

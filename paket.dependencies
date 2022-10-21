@@ -8,6 +8,7 @@ nuget FSharp.Core >= 6.0.0 lowest_matching: true, content: none
 # Server
 nuget Fable.Remoting.Giraffe
 nuget Fable.Remoting.Server
+nuget FSharp.SystemTextJson
 nuget Giraffe
 nuget Giraffe.ViewEngine
 nuget Ply

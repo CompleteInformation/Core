@@ -6,25 +6,29 @@ open Microsoft.AspNetCore.Http
 open System
 open System.IO
 open System.Text.Json
+open System.Text.Json.Serialization
 
 open CompleteInformation.Core
 
 [<RequireQualifiedAccess>]
 module Persistence =
+    let options = JsonSerializerOptions()
+    options.Converters.Add(JsonFSharpConverter())
+
     let saveFile file content = File.WriteAllTextAsync(file, content)
 
     let loadFile file = File.ReadAllTextAsync file
 
     let saveJson<'a> file (data: 'a) =
         task {
-            let json = JsonSerializer.Serialize<'a> data
+            let json = JsonSerializer.Serialize<'a>(data, options)
             do! saveFile file json
         }
 
     let loadJson<'a> file =
         task {
             let! json = loadFile file
-            return JsonSerializer.Deserialize<'a> json
+            return JsonSerializer.Deserialize<'a>(json, options)
         }
 
 [<RequireQualifiedAccess>]
