@@ -4,8 +4,28 @@ open Fable.Remoting.Giraffe
 open Fable.Remoting.Server
 open Microsoft.AspNetCore.Http
 open System
+open System.IO
+open System.Text.Json
 
 open CompleteInformation.Core
+
+[<RequireQualifiedAccess>]
+module Persistence =
+    let saveFile file content = File.WriteAllTextAsync(file, content)
+
+    let loadFile file = File.ReadAllTextAsync file
+
+    let saveJson<'a> file (data: 'a) =
+        task {
+            let json = JsonSerializer.Serialize<'a> data
+            do! saveFile file json
+        }
+
+    let loadJson<'a> file =
+        task {
+            let! json = loadFile file
+            return JsonSerializer.Deserialize<'a> json
+        }
 
 [<RequireQualifiedAccess>]
 module Api =
