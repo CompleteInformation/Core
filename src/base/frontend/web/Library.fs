@@ -9,8 +9,7 @@ open CompleteInformation.Core
 [<RequireQualifiedAccess>]
 module Api =
     let createBase () =
-        Remoting.createApi ()
-        |> Remoting.withBaseUrl "http://localhost:8084/api"
+        Remoting.createApi () |> Remoting.withBaseUrl "http://localhost:8084/api"
 
 [<RequireQualifiedAccess>]
 module Program =

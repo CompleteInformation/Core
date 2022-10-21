@@ -1,22 +1,29 @@
 ﻿namespace CompleteInformation.Base.Backend.Web
 
+open Fable.Remoting.Giraffe
+open Fable.Remoting.Server
+open Microsoft.AspNetCore.Http
+open System
+
 open CompleteInformation.Core
 
 [<RequireQualifiedAccess>]
 module Api =
-    open Fable.Remoting.Giraffe
-    open Fable.Remoting.Server
+    let devErrorHandler (ex: Exception) _ = Propagate(ex.ToString())
 
-    let build api routeBuilder =
+    let build devMode api routeBuilder =
         Remoting.createApi ()
+        |> if devMode then
+               Remoting.withErrorHandler devErrorHandler
+           else
+               id
         |> Remoting.withRouteBuilder routeBuilder
         |> Remoting.fromValue api
         |> Remoting.buildHttpHandler
 
 open Giraffe.Core
-open Microsoft.AspNetCore.Http
 
 type WebserverPlugin =
-    abstract member getApi: (string -> string -> string) -> (HttpFunc -> HttpContext -> HttpFuncResult)
+    abstract member getApi: bool -> (string -> string -> string) -> (HttpFunc -> HttpContext -> HttpFuncResult)
 
     abstract member getMetaData: unit -> PluginMetadata

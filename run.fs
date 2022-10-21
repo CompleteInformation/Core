@@ -12,11 +12,8 @@ module Config =
     let serverBackend = "./src/server/backend/"
     let serverFrontend = "./src/server/frontend/"
 
-    let dotnetProjects =
-        [
-            serverBackend
-            "./src/base/frontend/web/"
-        ]
+    let dotnetProjects = [ serverBackend ]
+    let fableProjects = [ "./src/base/frontend/web/" ]
 
     let npmProjects = [ serverFrontend ]
 
@@ -50,6 +47,12 @@ module Task =
             for project in Config.dotnetProjects do
                 DotNet.build project config
 
+            // Build fable projects
+            for project in Config.fableProjects do
+                CreateProcess.fromRawCommand "dotnet" [ "fable"; "-o"; "output" ]
+                |> CreateProcess.withWorkingDirectory project
+                |> Job.fromCreateProcess
+
             // Build npm projects
             let cmd =
                 match config with
@@ -64,16 +67,11 @@ module Task =
 
     let serveWebClient () =
         CreateProcess.fromRawCommand "npm" [ "run"; "start" ]
-        |> CreateProcess.withWorkingDirectory "./frontend/web"
+        |> CreateProcess.withWorkingDirectory Config.serverFrontend
         |> Job.fromCreateProcess
 
     let serveWebServer () =
-        dotnet [
-            "watch"
-            "run"
-            "--project"
-            Config.serverBackend
-        ]
+        dotnet [ "watch"; "run"; "--project"; Config.serverBackend ]
 
     let serveWeb () =
         parallelJob {
@@ -89,11 +87,9 @@ module Task =
             DotNet.publishSelfContained Config.publishPath Config.serverBackend LinuxX64
 
             // Remove all the *.xml files nobody needs
-            Directory.EnumerateFiles(Config.publishPath, "*.xml")
-            |> Seq.iter (Shell.rm)
+            Directory.EnumerateFiles(Config.publishPath, "*.xml") |> Seq.iter (Shell.rm)
 
-            Directory.CreateDirectory $"{Config.publishPath}/WebRoot"
-            |> ignore
+            Directory.CreateDirectory $"{Config.publishPath}/WebRoot" |> ignore
 
             Shell.copyRecursiveTo false $"{Config.publishPath}/WebRoot" $"{Config.serverFrontend}/deploy/public"
             |> ignore
@@ -107,15 +103,7 @@ module Task =
             for file in Directory.EnumerateFiles(Config.publishPath, "*", SearchOption.AllDirectories) do
                 let filePath = Path.GetRelativePath(Config.publishPath, file)
 
-                cmd
-                    "tar"
-                    [
-                        "-ravf"
-                        archive
-                        "-C"
-                        Config.publishPath
-                        filePath
-                    ]
+                cmd "tar" [ "-ravf"; archive; "-C"; Config.publishPath; filePath ]
 
             Shell.mv archive Config.publishPath
         }
@@ -143,15 +131,16 @@ let main args =
                 Task.restore ()
                 Task.serveWebServer ()
             }
+        | [ "serve"; "web-client" ] ->
+            job {
+                Task.restore ()
+                Task.serveWebClient ()
+            }
         | [ "publish" ] ->
             job {
                 Task.restore ()
                 Task.build Release
                 Task.publish ()
             }
-        | _ ->
-            Job.error [
-                "Usage: dotnet run [<command>]"
-                "Look up available commands in run.fs"
-            ]
+        | _ -> Job.error [ "Usage: dotnet run [<command>]"; "Look up available commands in run.fs" ]
     |> Job.execute

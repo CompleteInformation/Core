@@ -19,7 +19,7 @@ type Program = unit
 
 let routeBuilder = sprintf "/api/%s/%s"
 
-let getPluginApi plugins =
+let getPluginApi devMode plugins =
     let getPlugins () =
         async {
             return
@@ -30,71 +30,61 @@ let getPluginApi plugins =
 
     let api: PluginApi = { get = getPlugins }
 
-    Api.build api
+    Api.build devMode api
 
-let buildApis plugins =
-    let pluginApis = Seq.map (fun (plugin: WebserverPlugin) -> plugin.getApi) plugins
+let buildApis devMode plugins =
+    let pluginApis =
+        Seq.map (fun (plugin: WebserverPlugin) -> plugin.getApi devMode) plugins
 
-    [
-        getPluginApi plugins
-        yield! pluginApis
-    ]
+    [ getPluginApi devMode plugins; yield! pluginApis ]
     |> Seq.map (fun f -> f routeBuilder)
 
-let buildWebApp plugins =
-    choose [
+let buildWebApp devMode plugins =
+    choose
+        [
 #if DEBUG
-        route "/" >=> text "Server is running."
+            route "/" >=> text "Server is running."
 #else
-        route "/" >=> redirectTo true "/index.html"
+            route "/" >=> redirectTo true "/index.html"
 #endif
-        yield! buildApis plugins
-        setStatusCode 404 >=> text "Not Found"
-    ]
+            yield! buildApis devMode plugins
+            setStatusCode 404 >=> text "Not Found"
+        ]
 
 // ---------------------------------
 // Error handler
 // ---------------------------------
 
 let errorHandler (ex: Exception) (logger: ILogger) =
-    logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
+    logger.LogError(ex, "An unhanded exception has occurred while executing the request.")
 
-    clearResponse
-    >=> setStatusCode 500
-    >=> text ex.Message
+    clearResponse >=> setStatusCode 500 >=> text ex.Message
 
 // ---------------------------------
 // Config and Main
 // ---------------------------------
 
 let configureCors (builder: CorsPolicyBuilder) =
-    builder
-        .WithOrigins("http://localhost:8082")
-        .AllowAnyMethod()
-        .AllowAnyHeader()
+    builder.WithOrigins("http://localhost:8082").AllowAnyMethod().AllowAnyHeader()
     |> ignore
 
 let configureApp plugins (app: IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
 
+    let devMode = env.IsDevelopment()
+
     let app =
-        match env.IsDevelopment() with
+        match devMode with
         | true ->
-            printfn "Development mode"
+            printfn "[Server - Base] Development mode"
 
-            app
-                .UseDeveloperExceptionPage()
-                .UseCors(configureCors)
+            app.UseDeveloperExceptionPage().UseCors(configureCors)
         | false ->
-            printfn "Production mode"
+            printfn "[Server - Base] Production mode"
 
-            app
-                .UseGiraffeErrorHandler(errorHandler)
-                .UseHttpsRedirection()
+            app.UseGiraffeErrorHandler(errorHandler).UseHttpsRedirection()
 
-    app
-        .UseStaticFiles()
-        .UseGiraffe(buildWebApp plugins)
+    app.UseStaticFiles().UseGiraffe(buildWebApp devMode plugins)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -138,9 +128,7 @@ let createPlugin (assembly: Assembly) =
     assembly.GetTypes()
     |> Array.choose (fun t ->
         if t.IsAssignableTo typeof<WebserverPlugin> then
-            Activator.CreateInstance t
-            |> Option.ofObj
-            |> Option.map unbox<WebserverPlugin>
+            Activator.CreateInstance t |> Option.ofObj |> Option.map unbox<WebserverPlugin>
         else
             None)
     |> List.ofArray
