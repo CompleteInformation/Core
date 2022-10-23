@@ -12,12 +12,30 @@ open CompleteInformation.Core
 
 [<RequireQualifiedAccess>]
 module Persistence =
+    type ReadResult<'a> =
+        | Success of 'a
+        | FileNotFound
+
+    module ReadResult =
+        let map result =
+            function
+            | Success x -> Success(result x)
+            | FileNotFound -> FileNotFound
+
     let options = JsonSerializerOptions()
     options.Converters.Add(JsonFSharpConverter())
 
-    let saveFile file content = File.WriteAllTextAsync(file, content) |> Async.AwaitTask
+    let saveFile file content =
+        File.WriteAllTextAsync(file, content) |> Async.AwaitTask
 
-    let loadFile file = File.ReadAllTextAsync file |> Async.AwaitTask
+    let loadFile file =
+        async {
+            try
+                let! content = File.ReadAllTextAsync file |> Async.AwaitTask
+                return Success content
+            with :? FileNotFoundException ->
+                return FileNotFound
+        }
 
     let saveJson<'a> file (data: 'a) =
         async {
@@ -28,7 +46,7 @@ module Persistence =
     let loadJson<'a> file =
         async {
             let! json = loadFile file
-            return JsonSerializer.Deserialize<'a>(json, options)
+            return ReadResult.map (fun (json: string) -> JsonSerializer.Deserialize<'a>(json, options)) json
         }
 
 [<RequireQualifiedAccess>]
