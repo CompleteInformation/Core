@@ -29,12 +29,24 @@ module Persistence =
         File.WriteAllTextAsync(file, content) |> Async.AwaitTask
 
     let loadFile file =
+        let rec handleException (exn: exn) =
+            match exn with
+            | :? AggregateException as exn ->
+                // Do we have only one inner exception, we unwrap and handle that one
+                if exn.InnerExceptions.Count = 1 then
+                    handleException exn.InnerExceptions.[0]
+                else
+                    // Otherwise we rethrow the aggregate exception
+                    raise exn
+            | :? FileNotFoundException -> FileNotFound
+            | _ -> raise exn
+
         async {
             try
                 let! content = File.ReadAllTextAsync file |> Async.AwaitTask
                 return Success content
-            with :? FileNotFoundException ->
-                return FileNotFound
+            with exn ->
+                return handleException exn
         }
 
     let saveJson<'a> file (data: 'a) =

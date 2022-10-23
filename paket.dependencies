@@ -25,3 +25,8 @@ nuget Fable.Remoting.Client
 nuget Feliz
 nuget Feliz.Bulma
 nuget Fulma
+
+# Tests
+nuget Expecto
+nuget Expecto.BenchmarkDotNet
+nuget Expecto.FsCheck

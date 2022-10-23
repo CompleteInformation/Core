@@ -12,7 +12,9 @@ module Config =
     let serverBackend = "./src/server/backend/"
     let serverFrontend = "./src/server/frontend/"
 
-    let dotnetProjects = [ serverBackend ]
+    let testProjectsDotNet = [ "./tests/base/backend/web/" ]
+
+    let dotnetProjects = [ serverBackend; yield! testProjectsDotNet ]
     let fableProjects = [ "./src/base/frontend/web/" ]
 
     let npmProjects = [ serverFrontend ]
@@ -26,44 +28,42 @@ module Config =
     let plugins = []
 
 module Task =
-    let restore () =
-        job {
-            DotNet.toolRestore ()
+    let restore () = job {
+        DotNet.toolRestore ()
 
-            // Restore via dotnet
-            for project in Config.allProjects do
-                DotNet.restore project
+        // Restore via dotnet
+        for project in Config.allProjects do
+            DotNet.restore project
 
-            // Restore via npm
-            for project in Config.npmProjects do
-                CreateProcess.fromRawCommand "npm" [ "install" ]
-                |> CreateProcess.withWorkingDirectory project
-                |> Job.fromCreateProcess
-        }
+        // Restore via npm
+        for project in Config.npmProjects do
+            CreateProcess.fromRawCommand "npm" [ "install" ]
+            |> CreateProcess.withWorkingDirectory project
+            |> Job.fromCreateProcess
+    }
 
-    let build config =
-        job {
-            // Build dotnet projects
-            for project in Config.dotnetProjects do
-                DotNet.build project config
+    let build config = job {
+        // Build dotnet projects
+        for project in Config.dotnetProjects do
+            DotNet.build project config
 
-            // Build fable projects
-            for project in Config.fableProjects do
-                CreateProcess.fromRawCommand "dotnet" [ "fable"; "-o"; "output" ]
-                |> CreateProcess.withWorkingDirectory project
-                |> Job.fromCreateProcess
+        // Build fable projects
+        for project in Config.fableProjects do
+            CreateProcess.fromRawCommand "dotnet" [ "fable"; "-o"; "output" ]
+            |> CreateProcess.withWorkingDirectory project
+            |> Job.fromCreateProcess
 
-            // Build npm projects
-            let cmd =
-                match config with
-                | Debug -> "build"
-                | Release -> "build-prod"
+        // Build npm projects
+        let cmd =
+            match config with
+            | Debug -> "build"
+            | Release -> "build-prod"
 
-            for project in Config.npmProjects do
-                CreateProcess.fromRawCommand "npm" [ "run"; cmd ]
-                |> CreateProcess.withWorkingDirectory project
-                |> Job.fromCreateProcess
-        }
+        for project in Config.npmProjects do
+            CreateProcess.fromRawCommand "npm" [ "run"; cmd ]
+            |> CreateProcess.withWorkingDirectory project
+            |> Job.fromCreateProcess
+    }
 
     let serveWebClient () =
         CreateProcess.fromRawCommand "npm" [ "run"; "start" ]
@@ -73,40 +73,43 @@ module Task =
     let serveWebServer () =
         dotnet [ "watch"; "run"; "--project"; Config.serverBackend ]
 
-    let serveWeb () =
-        parallelJob {
-            serveWebClient ()
-            serveWebServer ()
-        }
+    let serveWeb () = parallelJob {
+        serveWebClient ()
+        serveWebServer ()
+    }
 
-    let publish () =
-        job {
-            // Cleanup
-            Shell.cleanDir Config.publishPath
+    let test () = job {
+        for project in Config.testProjectsDotNet do
+            DotNet.run project
+    }
 
-            DotNet.publishSelfContained Config.publishPath Config.serverBackend LinuxX64
+    let publish () = job {
+        // Cleanup
+        Shell.cleanDir Config.publishPath
 
-            // Remove all the *.xml files nobody needs
-            Directory.EnumerateFiles(Config.publishPath, "*.xml") |> Seq.iter (Shell.rm)
+        DotNet.publishSelfContained Config.publishPath Config.serverBackend LinuxX64
 
-            Directory.CreateDirectory $"{Config.publishPath}/WebRoot" |> ignore
+        // Remove all the *.xml files nobody needs
+        Directory.EnumerateFiles(Config.publishPath, "*.xml") |> Seq.iter (Shell.rm)
 
-            Shell.copyRecursiveTo false $"{Config.publishPath}/WebRoot" $"{Config.serverFrontend}/deploy/public"
-            |> ignore
+        Directory.CreateDirectory $"{Config.publishPath}/WebRoot" |> ignore
 
-            // Remove plugins, if there are some installed for testing
-            Shell.deleteDir $"{Config.publishPath}/WebRoot/plugins"
+        Shell.copyRecursiveTo false $"{Config.publishPath}/WebRoot" $"{Config.serverFrontend}/deploy/public"
+        |> ignore
 
-            // Bundle it up
-            let archive = "./CompleteInformation.tar.lz"
+        // Remove plugins, if there are some installed for testing
+        Shell.deleteDir $"{Config.publishPath}/WebRoot/plugins"
 
-            for file in Directory.EnumerateFiles(Config.publishPath, "*", SearchOption.AllDirectories) do
-                let filePath = Path.GetRelativePath(Config.publishPath, file)
+        // Bundle it up
+        let archive = "./CompleteInformation.tar.lz"
 
-                cmd "tar" [ "-ravf"; archive; "-C"; Config.publishPath; filePath ]
+        for file in Directory.EnumerateFiles(Config.publishPath, "*", SearchOption.AllDirectories) do
+            let filePath = Path.GetRelativePath(Config.publishPath, file)
 
-            Shell.mv archive Config.publishPath
-        }
+            cmd "tar" [ "-ravf"; archive; "-C"; Config.publishPath; filePath ]
+
+        Shell.mv archive Config.publishPath
+    }
 
 [<EntryPoint>]
 let main args =
@@ -114,33 +117,33 @@ let main args =
     |> List.ofArray
     |> function
         | [ "restore" ] -> Task.restore ()
-        | [ "build" ] ->
-            job {
-                Task.restore ()
-                Task.build Debug
-            }
+        | [ "build" ] -> job {
+            Task.restore ()
+            Task.build Debug
+          }
         | [ "serve"; "web" ]
-        | [ "serve" ]
-        | [] ->
-            job {
-                Task.restore ()
-                Task.serveWeb ()
-            }
-        | [ "serve"; "web-server" ] ->
-            job {
-                Task.restore ()
-                Task.serveWebServer ()
-            }
-        | [ "serve"; "web-client" ] ->
-            job {
-                Task.restore ()
-                Task.serveWebClient ()
-            }
-        | [ "publish" ] ->
-            job {
-                Task.restore ()
-                Task.build Release
-                Task.publish ()
-            }
+          | [ "serve" ]
+          | [] -> job {
+              Task.restore ()
+              Task.serveWeb ()
+          }
+        | [ "serve"; "web-server" ] -> job {
+            Task.restore ()
+            Task.serveWebServer ()
+          }
+        | [ "serve"; "web-client" ] -> job {
+            Task.restore ()
+            Task.serveWebClient ()
+          }
+        | [ "test" ] -> job {
+            Task.restore ()
+            Task.build Release
+            Task.test ()
+          }
+        | [ "publish" ] -> job {
+            Task.restore ()
+            Task.build Release
+            Task.publish ()
+          }
         | _ -> Job.error [ "Usage: dotnet run [<command>]"; "Look up available commands in run.fs" ]
     |> Job.execute
