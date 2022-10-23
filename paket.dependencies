@@ -24,7 +24,6 @@ nuget Fable.React
 nuget Fable.Remoting.Client
 nuget Feliz
 nuget Feliz.Bulma
-nuget Fulma
 
 # Tests
 nuget Expecto
