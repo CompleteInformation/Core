@@ -137,7 +137,6 @@ let main args =
           }
         | [ "test" ] -> job {
             Task.restore ()
-            Task.build Release
             Task.test ()
           }
         | [ "publish" ] -> job {

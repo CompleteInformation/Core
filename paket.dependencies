@@ -7,25 +7,16 @@ nuget FSharp.Core >= 6.0.0 lowest_matching: true, content: none
 
 # Server
 nuget Fable.Remoting.Giraffe
-nuget Fable.Remoting.Server
 nuget FSharp.SystemTextJson
-nuget Giraffe
-nuget Giraffe.ViewEngine
-nuget Ply
 
 # Client
-nuget Fable.Core
-nuget Fable.Elmish
-nuget Fable.Elmish.Browser
-nuget Fable.Elmish.HMR
-nuget Fable.Elmish.React
+nuget Fable.Elmish prerelease
+nuget Fable.Elmish.React prerelease
 nuget Fable.Mocha
-nuget Fable.React
 nuget Fable.Remoting.Client
-nuget Feliz
-nuget Feliz.Bulma
+nuget Feliz prerelease
+nuget Feliz.Bulma prerelease
 
 # Tests
-nuget Expecto
 nuget Expecto.BenchmarkDotNet
 nuget Expecto.FsCheck

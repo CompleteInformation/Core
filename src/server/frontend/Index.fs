@@ -20,11 +20,10 @@ module NativeWrapper =
     let activatePlugin = PluginId.unwrap >> Native.activatePlugin
 
 module Index =
-    type Model =
-        {
-            /// List of installed plugins, if None they are still loading
-            plugins: PluginMetadata list option
-        }
+    type Model = {
+        /// List of installed plugins, if None they are still loading
+        plugins: PluginMetadata list option
+    }
 
     type Msg =
         | GetPlugins
@@ -58,43 +57,34 @@ module Index =
     open Feliz
     open Feliz.Bulma
 
-    let navItems dispatch plugins =
-        [
-            for plugin in plugins do
-                Bulma.navbarItem.div [
-                    prop.text plugin.name
-                    prop.onClick (fun _ -> ActivatePlugin plugin.id |> dispatch)
-                ]
-        ]
+    let navItems dispatch plugins = [
+        for plugin in plugins do
+            Bulma.navbarItem.div [
+                prop.text plugin.name
+                prop.onClick (fun _ -> ActivatePlugin plugin.id |> dispatch)
+            ]
+    ]
 
     let navBar dispatch plugins =
-        Bulma.navbar [
-            Bulma.navbarMenu [
-                Bulma.navbarStart.div (navItems dispatch plugins)
-            ]
-        ]
+        Bulma.navbar [ Bulma.navbarMenu [ Bulma.navbarStart.div (navItems dispatch plugins) ] ]
 
-    let content plugins =
-        [
-            Bulma.title "Complete Information"
-            Bulma.block [
-                prop.text "Welcome to Complete Information, your central place for managing your data."
-            ]
-            // Give a hint if there are no plugins
-            match plugins with
-            | Some plugins when Seq.isEmpty plugins ->
-                Bulma.block [
-                    prop.text
-                        "It looks like you have no plugins installed. Download some and put them in the plugins and WebRoot/plugins folder."
-                ]
-            | _ -> ()
+    let content plugins = [
+        Bulma.title "Complete Information"
+        Bulma.block [
+            prop.text "Welcome to Complete Information, your central place for managing your data."
         ]
+        // Give a hint if there are no plugins
+        match plugins with
+        | Some plugins when Seq.isEmpty plugins ->
+            Bulma.block [
+                prop.text
+                    "It looks like you have no plugins installed. Download some and put them in the plugins and WebRoot/plugins folder."
+            ]
+        | _ -> ()
+    ]
 
     let view (model: Model) (dispatch: Msg -> unit) =
         Html.div [
             navBar dispatch (Option.defaultValue [] model.plugins)
-            Bulma.container [
-                prop.id "main-container"
-                prop.children (content model.plugins)
-            ]
+            Bulma.container [ prop.id "main-container"; prop.children (content model.plugins) ]
         ]
