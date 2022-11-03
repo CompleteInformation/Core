@@ -49,15 +49,20 @@ module Persistence =
                 return handleException exn
         }
 
-    let saveJson<'a> file (data: 'a) =
+    let getFilePath (modul: string) (path: string) =
+        let basePath = "./data"
+        Path.Combine(basePath, modul, path)
+
+    let saveJson<'a> modul file (data: 'a) =
         async {
+            let file = getFilePath modul file
             let json = JsonSerializer.Serialize<'a>(data, options)
             do! saveFile file json
         }
 
-    let loadJson<'a> file =
+    let loadJson<'a> modul file =
         async {
-            let! json = loadFile file
+            let! json = getFilePath modul file |> loadFile
             return ReadResult.map (fun (json: string) -> JsonSerializer.Deserialize<'a>(json, options)) json
         }
 
