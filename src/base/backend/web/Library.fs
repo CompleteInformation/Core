@@ -49,9 +49,14 @@ module Persistence =
                 return handleException exn
         }
 
-    let getFilePath (modul: string) (path: string) =
+    let getFilePath (modul: string) (file: string) =
         let basePath = "./data"
-        Path.Combine(basePath, modul, path)
+        let path = Path.Combine(basePath, modul, file)
+        // Impure, we create the path if it does not exist
+        // Could be done on startup of the server, but that would require
+        // the base path in a shared lib, skipped for now
+        Directory.CreateDirectory(Path.GetDirectoryName(path))
+        path
 
     let saveJson<'a> modul file (data: 'a) =
         async {
