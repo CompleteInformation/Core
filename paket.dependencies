@@ -11,12 +11,12 @@ nuget FSharp.SystemTextJson
 
 # Client
 nuget Fable.Browser.WebStorage
-nuget Fable.Elmish prerelease
-nuget Fable.Elmish.React prerelease
+nuget Fable.Elmish
+nuget Fable.Elmish.React
 nuget Fable.Mocha
 nuget Fable.Remoting.Client
-nuget Feliz prerelease
-nuget Feliz.Bulma prerelease
+nuget Feliz
+nuget Feliz.Bulma
 
 # Tests
 nuget Expecto.BenchmarkDotNet
