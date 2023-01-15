@@ -58,18 +58,16 @@ module Persistence =
         Directory.CreateDirectory(Path.GetDirectoryName(path))
         path
 
-    let saveJson<'a> modul file (data: 'a) =
-        async {
-            let file = getFilePath modul file
-            let json = JsonSerializer.Serialize<'a>(data, options)
-            do! saveFile file json
-        }
+    let saveJson<'a> modul file (data: 'a) = async {
+        let file = getFilePath modul file
+        let json = JsonSerializer.Serialize<'a>(data, options)
+        do! saveFile file json
+    }
 
-    let loadJson<'a> modul file =
-        async {
-            let! json = getFilePath modul file |> loadFile
-            return ReadResult.map (fun (json: string) -> JsonSerializer.Deserialize<'a>(json, options)) json
-        }
+    let loadJson<'a> modul file = async {
+        let! json = getFilePath modul file |> loadFile
+        return ReadResult.map (fun (json: string) -> JsonSerializer.Deserialize<'a>(json, options)) json
+    }
 
 [<RequireQualifiedAccess>]
 module Api =

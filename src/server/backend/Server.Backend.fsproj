@@ -8,6 +8,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Api.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

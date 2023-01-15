@@ -10,6 +10,7 @@ nuget Fable.Remoting.Giraffe
 nuget FSharp.SystemTextJson
 
 # Client
+nuget Fable.Browser.WebStorage
 nuget Fable.Elmish prerelease
 nuget Fable.Elmish.React prerelease
 nuget Fable.Mocha
