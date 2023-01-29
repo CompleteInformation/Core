@@ -34,7 +34,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           automatic_release_tag: latest
           prerelease: false
-          title: Continuous Build
+          title: Devkit (Continuous)
           files: |
             LICENSE.txt
             publish/CompleteInformation.tar.lz
