@@ -1,10 +1,20 @@
 ﻿namespace CompleteInformation.Base.Frontend.Web
 
+open Browser
 open Elmish
 open Elmish.React
 open Fable.Remoting.Client
+open System
 
 open CompleteInformation.Core
+
+[<RequireQualifiedAccess>]
+module LocalStorage =
+    let getUserId () =
+        localStorage.getItem Constant.userIdKey
+        |> function
+            | null -> None
+            | id -> Int32.Parse id |> UserId |> Some
 
 [<RequireQualifiedAccess>]
 module Api =

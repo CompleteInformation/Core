@@ -17,10 +17,11 @@ graph RL;
     PBW([Plugin Backend Web])
 
     SA --> C
-    SFW --> SA
-    SBW --> SA
     BBW --> C
     BFW --> C
+    SFW --> SA
+    SBW --> SA
+    SFW --> BFW
     SBW --> BBW
     PFW --> BFW
     PBW --> BBW

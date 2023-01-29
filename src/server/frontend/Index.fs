@@ -7,6 +7,7 @@ open Fable.Remoting.Client
 open System
 
 open CompleteInformation.Core
+open CompleteInformation.Base.Frontend.Web
 open CompleteInformation.Server.Api
 
 module Native =
@@ -55,11 +56,7 @@ module Index =
     let userApi = createApi<UserApi> ()
 
     let init () : Model * Cmd<Msg> =
-        let userId =
-            localStorage.getItem "userId"
-            |> function
-                | null -> None
-                | id -> Int32.Parse id |> UserId |> Some
+        let userId = LocalStorage.getUserId ()
 
         let model = {
             plugins = None
@@ -97,7 +94,8 @@ module Index =
         | SetUser user -> { model with user = user }, Cmd.none
         | SetUserList userList -> { model with userList = userList }, Cmd.none
         | SelectUser user ->
-            localStorage.setItem ("userId", UserId.unwrap user.id |> string)
+            // We only write this once here, that's why this isn't in a library
+            localStorage.setItem (Constant.userIdKey, UserId.unwrap user.id |> string)
 
             { model with user = Some user }, Cmd.none
         | ChangeCreateUserName name -> { model with createUser = name }, Cmd.none
