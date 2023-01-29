@@ -147,47 +147,80 @@ module Index =
         Bulma.navbar [ Bulma.navbarMenu [ Bulma.navbarStart.div (navItems dispatch plugins) ] ]
 
     let content plugins (user: User) dispatch = [
-        Bulma.title "Complete Information"
+        Bulma.title [ Bulma.title.is2; prop.text "Complete Information" ]
         Bulma.block [
             prop.text "Welcome to Complete Information, your central place for managing your data."
         ]
         Bulma.block [
             prop.text $"You are currently logged in as {user.name} (ID: {UserId.toString user.id})."
         ]
-        Html.button [ prop.text "Change User"; prop.onClick (fun _ -> DeselectUser |> dispatch) ]
+
+        Bulma.buttons [
+            Bulma.button.button [
+                Bulma.color.isPrimary
+                Bulma.color.isLight
+                prop.text "Change User"
+                prop.onClick (fun _ -> DeselectUser |> dispatch)
+            ]
+        ]
+
         // Give a hint if there are no plugins
         match plugins with
         | Some plugins when Seq.isEmpty plugins ->
-            Bulma.block [
-                prop.text
-                    "It looks like you have no plugins installed. Download some and put them in the plugins and WebRoot/plugins folder."
+            let warning =
+                "It looks like you have no plugins installed. Download some and put them in the plugins and WebRoot/plugins folder."
+
+            Bulma.notification [
+                Bulma.color.isWarning
+                prop.children[Bulma.iconText [
+                                  Bulma.icon [ Html.i [ prop.className "fas fa-exclamation-triangle" ] ]
+                                  Html.span warning
+                              ]]
             ]
         | _ -> ()
     ]
 
     let userView (model: Model) (dispatch: Msg -> unit) =
         Bulma.container [
+            Bulma.title [ Bulma.title.is2; prop.text "Complete Information" ]
+
             Bulma.columns [
                 Bulma.column [
                     Bulma.block [ prop.text "No User selected!" ]
 
                     // Create a new user
-                    Html.input [
-                        prop.placeholder "Name"
-                        prop.onTextChange (fun text -> ChangeCreateUserName text |> dispatch)
+                    Bulma.field.div [
+                        Bulma.control.div [
+                            Bulma.input.text [
+                                prop.placeholder "Name"
+                                prop.onTextChange (fun text -> ChangeCreateUserName text |> dispatch)
+                            ]
+                        ]
                     ]
-                    Html.button [ prop.text "Create"; prop.onClick (fun _ -> CreateUser |> dispatch) ]
+                    Bulma.buttons [
+                        Bulma.button.button [
+                            Bulma.color.isPrimary
+                            Bulma.color.isLight
+                            prop.text "Create"
+                            prop.onClick (fun _ -> CreateUser |> dispatch)
+                        ]
+                    ]
 
                     // Select a user
                     match model.userList with
                     | None -> Html.div [ prop.text "Loading users..." ]
                     | Some [] -> () // No users yet
                     | Some userList ->
-                        Bulma.title "Select user"
+                        Bulma.title [ Bulma.title.is4; prop.text "Select user" ]
                         Bulma.block [ prop.text "Please select your user." ]
 
-                        for user in userList do
-                            Html.button [ prop.text user.name; prop.onClick (fun _ -> SelectUser user |> dispatch) ]
+                        Bulma.buttons [
+                            for user in userList do
+                                Bulma.button.button [
+                                    prop.text user.name
+                                    prop.onClick (fun _ -> SelectUser user |> dispatch)
+                                ]
+                        ]
                 ]
             ]
         ]
