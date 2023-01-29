@@ -54,7 +54,12 @@ module Persistence =
         let appendSeq file data =
             File.AppendAllLinesAsync(file, data) |> Async.AwaitTask
 
-        // TODO: read parts
+        let readLines file =
+            try
+                let lines = File.ReadLines file
+                Success lines
+            with exn ->
+                Internal.handleLoadException exn
 
         let save file data =
             File.WriteAllTextAsync(file, $"%s{data}\n") |> Async.AwaitTask
@@ -92,8 +97,6 @@ module Persistence =
         }
 
     module JsonL =
-        // TODO: read data partially
-
         let append<'a> modul file (data: 'a) = async {
             let file = Internal.getFilePath modul file
             let json = JsonSerializer.Serialize<'a>(data, Internal.options)
@@ -117,6 +120,13 @@ module Persistence =
                     (Seq.map (fun (json: string) -> JsonSerializer.Deserialize<'a>(json, Internal.options)))
                     json
         }
+
+        let read<'a> modul file =
+            let result = Internal.getFilePath modul file |> File.readLines
+
+            ReadResult.map
+                (Seq.map (fun (json: string) -> JsonSerializer.Deserialize<'a>(json, Internal.options)))
+                result
 
         let save<'a> modul file (data: 'a seq) = async {
             let file = Internal.getFilePath modul file
