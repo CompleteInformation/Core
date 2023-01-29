@@ -36,7 +36,6 @@ module Index =
         | GetPlugins
         | FetchUser of UserId
         | FetchUserList
-        | SetUser of User option
         | SetUserList of User list option
         | SelectUser of User
         | ChangeCreateUserName of string
@@ -83,7 +82,16 @@ module Index =
 
             model, cmd
         | FetchUser userId ->
-            let cmd = Cmd.OfAsync.perform userApi.get userId SetUser
+            let ofSuccess user =
+                match user with
+                | Some user -> SelectUser user
+                | None ->
+                    // If the user doesn't exist, we delete the ID from the local storage
+                    localStorage.removeItem Constant.userIdKey
+                    // We then fetch the user list to allow selecting an existing one
+                    FetchUserList
+
+            let cmd = Cmd.OfAsync.perform userApi.get userId ofSuccess
 
             model, cmd
         | FetchUserList ->
@@ -91,7 +99,6 @@ module Index =
                 Cmd.OfAsync.perform userApi.getList () (fun userList -> Some userList |> SetUserList)
 
             model, cmd
-        | SetUser user -> { model with user = user }, Cmd.none
         | SetUserList userList -> { model with userList = userList }, Cmd.none
         | SelectUser user ->
             // We only write this once here, that's why this isn't in a library
