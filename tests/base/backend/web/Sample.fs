@@ -11,7 +11,7 @@ let tests =
         testAsync "file does not exist" {
             let path = Path.GetTempFileName()
             File.Delete path
-            let! result = Persistence.loadFile path
+            let! result = Persistence.File.load path
             Expect.equal result Persistence.FileNotFound "file does not exist"
         }
     ]

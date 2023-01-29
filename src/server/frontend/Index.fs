@@ -37,6 +37,7 @@ module Index =
         | FetchUser of UserId
         | FetchUserList
         | SetUserList of User list option
+        | DeselectUser
         | SelectUser of User
         | ChangeCreateUserName of string
         | CreateUser
@@ -102,9 +103,24 @@ module Index =
         | SetUserList userList -> { model with userList = userList }, Cmd.none
         | SelectUser user ->
             // We only write this once here, that's why this isn't in a library
-            localStorage.setItem (Constant.userIdKey, UserId.unwrap user.id |> string)
+            localStorage.setItem (Constant.userIdKey, UserId.toString user.id)
 
-            { model with user = Some user }, Cmd.none
+            // Reset userlist, this isn't accurate anymore
+            { model with
+                user = Some user
+                userList = None
+            },
+            Cmd.none
+        | DeselectUser ->
+            localStorage.removeItem Constant.userIdKey
+
+            // Fetch user list, if we don't have one yet
+            let cmd =
+                match model.userList with
+                | None -> Cmd.ofMsg FetchUserList
+                | Some _ -> Cmd.none
+
+            { model with user = None }, cmd
         | ChangeCreateUserName name -> { model with createUser = name }, Cmd.none
         | CreateUser ->
             let cmd = Cmd.OfAsync.perform userApi.create model.createUser FetchUser
@@ -130,14 +146,15 @@ module Index =
     let navBar dispatch plugins =
         Bulma.navbar [ Bulma.navbarMenu [ Bulma.navbarStart.div (navItems dispatch plugins) ] ]
 
-    let content plugins (user: User) = [
+    let content plugins (user: User) dispatch = [
         Bulma.title "Complete Information"
         Bulma.block [
             prop.text "Welcome to Complete Information, your central place for managing your data."
         ]
         Bulma.block [
-            prop.text $"You are currently logged in as {user.name} (ID: {UserId.unwrap user.id})."
+            prop.text $"You are currently logged in as {user.name} (ID: {UserId.toString user.id})."
         ]
+        Html.button [ prop.text "Change User"; prop.onClick (fun _ -> DeselectUser |> dispatch) ]
         // Give a hint if there are no plugins
         match plugins with
         | Some plugins when Seq.isEmpty plugins ->
@@ -183,5 +200,8 @@ module Index =
         | Some user ->
             Html.div [
                 navBar dispatch (Option.defaultValue [] model.plugins)
-                Bulma.container [ prop.id "main-container"; prop.children (content model.plugins user) ]
+                Bulma.container [
+                    prop.id "main-container"
+                    prop.children (content model.plugins user dispatch)
+                ]
             ]

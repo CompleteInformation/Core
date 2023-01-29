@@ -14,7 +14,7 @@ module LocalStorage =
         localStorage.getItem Constant.userIdKey
         |> function
             | null -> None
-            | id -> Int32.Parse id |> UserId |> Some
+            | id -> Guid.Parse id |> UserId |> Some
 
 [<RequireQualifiedAccess>]
 module Api =

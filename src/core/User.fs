@@ -1,10 +1,11 @@
 namespace CompleteInformation.Core
 
-// TODO: Change to UUID
-type UserId = UserId of int
+open System
+
+type UserId = UserId of Guid
 
 module UserId =
-    let unwrap (UserId id) = id
+    let toString (UserId id) = id.ToString()
 
 type User = { id: UserId; name: string }
 

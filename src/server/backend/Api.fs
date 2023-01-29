@@ -5,6 +5,7 @@ module Api =
     open CompleteInformation.Base.Backend.Web
     open CompleteInformation.Core
     open CompleteInformation.Server.Api
+    open System
 
     let getPluginApi devMode plugins =
         let getPlugins () = async {
@@ -22,34 +23,31 @@ module Api =
         type UserMap = Map<UserId, User>
 
         let moduleName = "user"
-        let fileName = "users.json"
+        let fileName = "users.jsonl"
 
-        let save (map: UserMap) =
-            Map.values map |> List.ofSeq |> Persistence.saveJson moduleName fileName
+        let append (user: User) =
+            Persistence.JsonL.append moduleName fileName user
 
         let load () : Async<UserMap> = async {
-            let! list = Persistence.loadJson<User list> moduleName fileName
+            let! list = Persistence.JsonL.load<User> moduleName fileName
 
             return
                 match list with
                 | Persistence.ReadResult.Success list -> list
                 | Persistence.ReadResult.FileNotFound -> []
-                |> List.map (fun (user: User) -> user.id, user)
-                |> Map.ofList
+                |> Seq.map (fun (user: User) -> user.id, user)
+                |> Map.ofSeq
         }
 
     let getUserApi devMode =
         let mutable users = User.load () |> Async.RunSynchronously
 
         let createUser name = async {
-            let id =
-                match Map.count users with
-                | 0 -> 1
-                | _ -> Map.keys users |> Seq.map UserId.unwrap |> Seq.max |> (+) 1
-                |> UserId
+            let id = Guid.NewGuid() |> UserId
+            let user = User.create id name
 
-            users <- Map.add id (User.create id name) users
-            User.save users |> Async.RunSynchronously
+            users <- Map.add id user users
+            do! User.append user
 
             return id
         }
