@@ -1,5 +1,6 @@
 namespace CompleteInformation.Core
 
+// TODO: Change to UUID
 type UserId = UserId of int
 
 module UserId =
