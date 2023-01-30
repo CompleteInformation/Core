@@ -6,9 +6,9 @@
     <WarnOn>3390;$(WarnOn)</WarnOn>
   </PropertyGroup>
   <PropertyGroup>
-    <Product>NicoVIII.CompleteInformation.Shared</Product>
-    <PackageId>NicoVIII.CompleteInformation.Shared</PackageId>
-    <Title>CompleteInformation.Shared</Title>
+    <Product>NicoVIII.CompleteInformation.Core</Product>
+    <PackageId>NicoVIII.CompleteInformation.Core</PackageId>
+    <Title>CompleteInformation.Core</Title>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Constant.fs" />

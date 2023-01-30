@@ -26,5 +26,5 @@ graph RL;
     PFW --> BFW
     PBW --> BBW
 ```
-Packages with no release on nuget and only an release as part of an application, have an additional line left and right of the box.
+Packages with no release on nuget and only an release as part of the foundation application, have an additional line left and right of the box.
 Packages which are not part of this repo but rather part of the plugin repos are round.
