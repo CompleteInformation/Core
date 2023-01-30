@@ -16,9 +16,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - name: Run build
@@ -32,9 +32,9 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: latest
-          prerelease: false
-          title: Devkit (Continuous)
+          automatic_release_tag: canary
+          prerelease: true
+          title: Continuous Build
           files: |
             LICENSE.txt
             publish/CompleteInformation.tar.lz
