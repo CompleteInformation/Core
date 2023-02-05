@@ -83,32 +83,63 @@ module Task =
             DotNet.run project
     }
 
+    let publishWithConfig config fileName = job {
+        // At first, we have to build to get the frontend code files
+        build config
+
+        let tmpPath = $"{Config.publishPath}/tmp"
+        Shell.cleanDir tmpPath
+
+        match config with
+        | Debug ->
+            // Publish selfcontained, but in debug mode
+            dotnet [
+                "publish"
+                Config.serverBackend
+                "-r"
+                DotNetOS.toString LinuxX64
+                "-v"
+                "minimal"
+                "-c"
+                DotNetConfig.toString Debug
+                "-o"
+                tmpPath
+                "--self-contained"
+                "/p:PublishSingleFile=true"
+                "/p:EnableCompressionInSingleFile=true"
+                "/p:IncludeNativeLibrariesForSelfExtract=true"
+                "/p:DebugType=None"
+            ]
+        | Release -> DotNet.publishSelfContained tmpPath Config.serverBackend LinuxX64
+
+        // Remove all the *.xml files nobody needs
+        Directory.EnumerateFiles(tmpPath, "*.xml") |> Seq.iter (Shell.rm)
+
+        Directory.CreateDirectory $"{tmpPath}/WebRoot" |> ignore
+
+        Shell.copyRecursiveTo false $"{tmpPath}/WebRoot" $"{Config.serverFrontend}/deploy/public"
+        |> ignore
+
+        // Remove plugins, if there are some installed for testing
+        Shell.deleteDir $"{tmpPath}/WebRoot/plugins"
+
+        // Bundle it up
+        let archive = $"./{fileName}.tar.lz"
+
+        for file in Directory.EnumerateFiles(tmpPath, "*", SearchOption.AllDirectories) do
+            let filePath = Path.GetRelativePath(tmpPath, file)
+
+            cmd "tar" [ "-ravf"; archive; "-C"; tmpPath; filePath ]
+
+        Shell.mv archive Config.publishPath
+    }
+
     let publish () = job {
         // Cleanup
         Shell.cleanDir Config.publishPath
 
-        DotNet.publishSelfContained Config.publishPath Config.serverBackend LinuxX64
-
-        // Remove all the *.xml files nobody needs
-        Directory.EnumerateFiles(Config.publishPath, "*.xml") |> Seq.iter (Shell.rm)
-
-        Directory.CreateDirectory $"{Config.publishPath}/WebRoot" |> ignore
-
-        Shell.copyRecursiveTo false $"{Config.publishPath}/WebRoot" $"{Config.serverFrontend}/deploy/public"
-        |> ignore
-
-        // Remove plugins, if there are some installed for testing
-        Shell.deleteDir $"{Config.publishPath}/WebRoot/plugins"
-
-        // Bundle it up
-        let archive = "./CompleteInformation.tar.lz"
-
-        for file in Directory.EnumerateFiles(Config.publishPath, "*", SearchOption.AllDirectories) do
-            let filePath = Path.GetRelativePath(Config.publishPath, file)
-
-            cmd "tar" [ "-ravf"; archive; "-C"; Config.publishPath; filePath ]
-
-        Shell.mv archive Config.publishPath
+        publishWithConfig Debug "ci-plugin-devkit"
+        publishWithConfig Release "complete-information-server"
     }
 
 [<EntryPoint>]
@@ -122,10 +153,10 @@ let main args =
             Task.build Debug
           }
         | [ "serve"; "web" ]
-          | [ "serve" ]
-          | [] -> job {
-              Task.restore ()
-              Task.serveWeb ()
+        | [ "serve" ]
+        | [] -> job {
+            Task.restore ()
+            Task.serveWeb ()
           }
         | [ "serve"; "web-server" ] -> job {
             Task.restore ()
@@ -141,7 +172,6 @@ let main args =
           }
         | [ "publish" ] -> job {
             Task.restore ()
-            Task.build Release
             Task.publish ()
           }
         | _ -> Job.error [ "Usage: dotnet run [<command>]"; "Look up available commands in run.fs" ]
