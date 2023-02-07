@@ -29,7 +29,7 @@ module Helper =
 
     let buildWebApp devMode plugins =
         choose [
-#if DEBUG
+#if DEVSERVER
             route "/" >=> text "Server is running."
 #else
             route "/" >=> redirectTo true "/index.html"

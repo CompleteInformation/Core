@@ -71,7 +71,7 @@ module Task =
         |> Job.fromCreateProcess
 
     let serveWebServer () =
-        dotnet [ "watch"; "run"; "--project"; Config.serverBackend ]
+        dotnet [ "watch"; "run"; "-p:ExtraDefineConstants=DEVSERVER"; "--project"; Config.serverBackend ]
 
     let serveWeb () = parallelJob {
         serveWebClient ()
