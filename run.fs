@@ -140,6 +140,7 @@ module Task =
 
         // Release
         publishWithConfig (DotNetOS.toString LinuxX64) Release "complete-information-server-linux-x64"
+        publishWithConfig "linux-arm" Release "complete-information-server-linux-arm"
         publishWithConfig "linux-arm64" Release "complete-information-server-linux-arm64"
 
         // Devkit
