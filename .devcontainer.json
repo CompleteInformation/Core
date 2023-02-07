@@ -36,6 +36,7 @@
 	"postStartCommand": "dotnet run restore",
 
 	"containerEnv": {
+		"DOTNET_URLS": "http://+:8084",
 		"ASPNETCORE_ENVIRONMENT": "Development"
 	}
 

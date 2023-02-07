@@ -154,7 +154,6 @@ module Program =
                     .UseKestrel()
                     .UseContentRoot(contentRoot)
                     .UseWebRoot(webRoot)
-                    .UseUrls("http://localhost:8084")
                     .Configure(Action<IApplicationBuilder>(configureApp plugins))
                     .ConfigureServices(configureServices)
                     .ConfigureLogging(configureLogging)
