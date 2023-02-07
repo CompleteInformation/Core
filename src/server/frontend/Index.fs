@@ -44,18 +44,22 @@ module Index =
         | OnPluginsLoaded of PluginMetadata list
         | ActivatePlugin of PluginId
 
-    let apiBaseUrl = "http://localhost:8084/api"
-
     let inline createApi<'a> () =
-        Remoting.createApi ()
-        |> Remoting.withBaseUrl apiBaseUrl
-        |> Remoting.buildProxy<'a>
+        Api.createBase () |> Remoting.buildProxy<'a>
 
     let pluginApi = createApi<PluginApi> ()
 
     let userApi = createApi<UserApi> ()
 
     let init () : Model * Cmd<Msg> =
+        // Set api base url
+#if DEVSERVER
+        let apiBaseUrl = "http://localhost:8084/api"
+#else
+        let apiBaseUrl = $"{window.location.host}/api"
+#endif
+        localStorage.setItem (Constant.LocalStorage.apiBaseUrlKey, apiBaseUrl)
+
         let userId = LocalStorage.getUserId ()
 
         let model = {
@@ -88,7 +92,7 @@ module Index =
                 | Some user -> SelectUser user
                 | None ->
                     // If the user doesn't exist, we delete the ID from the local storage
-                    localStorage.removeItem Constant.userIdKey
+                    localStorage.removeItem Constant.LocalStorage.userIdKey
                     // We then fetch the user list to allow selecting an existing one
                     FetchUserList
 
@@ -103,7 +107,7 @@ module Index =
         | SetUserList userList -> { model with userList = userList }, Cmd.none
         | SelectUser user ->
             // We only write this once here, that's why this isn't in a library
-            localStorage.setItem (Constant.userIdKey, UserId.toString user.id)
+            localStorage.setItem (Constant.LocalStorage.userIdKey, UserId.toString user.id)
 
             // Reset userlist, this isn't accurate anymore
             { model with
@@ -112,7 +116,7 @@ module Index =
             },
             Cmd.none
         | DeselectUser ->
-            localStorage.removeItem Constant.userIdKey
+            localStorage.removeItem Constant.LocalStorage.userIdKey
 
             // Fetch user list, if we don't have one yet
             let cmd =

@@ -4,4 +4,6 @@ namespace CompleteInformation.Core
 module Constant =
     let moduleSlotId = "module-slot"
 
-    let userIdKey = "userId"
+    module LocalStorage =
+        let userIdKey = "userId"
+        let apiBaseUrlKey = "apiBaseUrl"

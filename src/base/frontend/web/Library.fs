@@ -11,15 +11,25 @@ open CompleteInformation.Core
 [<RequireQualifiedAccess>]
 module LocalStorage =
     let getUserId () =
-        localStorage.getItem Constant.userIdKey
+        localStorage.getItem Constant.LocalStorage.userIdKey
         |> function
             | null -> None
             | id -> Guid.Parse id |> UserId |> Some
 
+    let getApiBaseUrl () =
+        localStorage.getItem Constant.LocalStorage.apiBaseUrlKey
+        |> function
+            | null -> None
+            | url -> Some url
+
 [<RequireQualifiedAccess>]
 module Api =
     let createBase () =
-        Remoting.createApi () |> Remoting.withBaseUrl "http://localhost:8084/api"
+        let apiBase =
+            LocalStorage.getApiBaseUrl ()
+            |> Option.defaultWith (fun () -> $"{window.location.host}/api")
+
+        Remoting.createApi () |> Remoting.withBaseUrl apiBase
 
 [<RequireQualifiedAccess>]
 module Program =
