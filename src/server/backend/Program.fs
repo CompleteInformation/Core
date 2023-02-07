@@ -52,7 +52,10 @@ module Helper =
     // ---------------------------------
 
     let configureCors (builder: CorsPolicyBuilder) =
-        builder.WithOrigins("http://localhost:8082").AllowAnyMethod().AllowAnyHeader()
+        builder
+            .WithOrigins([| "http://localhost:8082"; "http://127.0.0.1:8082" |])
+            .AllowAnyMethod()
+            .AllowAnyHeader()
         |> ignore
 
     let configureApp plugins (app: IApplicationBuilder) =
