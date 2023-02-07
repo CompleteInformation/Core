@@ -27,7 +27,7 @@ module Api =
     let createBase () =
         let apiBase =
             LocalStorage.getApiBaseUrl ()
-            |> Option.defaultWith (fun () -> $"{window.location.host}/api")
+            |> Option.defaultWith (fun () -> $"{window.location.protocol}//{window.location.host}/api")
 
         Remoting.createApi () |> Remoting.withBaseUrl apiBase
 

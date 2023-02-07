@@ -56,7 +56,7 @@ module Index =
 #if DEVSERVER
         let apiBaseUrl = "http://localhost:8084/api"
 #else
-        let apiBaseUrl = $"{window.location.host}/api"
+        let apiBaseUrl = $"{window.location.protocol}//{window.location.host}/api"
 #endif
         localStorage.setItem (Constant.LocalStorage.apiBaseUrlKey, apiBaseUrl)
 
