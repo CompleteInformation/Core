@@ -38,13 +38,15 @@ jobs:
       - name: Bundle releases
         run: dotnet run publish
       # For now I simply make a continuous build
+      - name: Move tag
+        run: git tag -f canary && git push -f origin canary
       - name: Release files
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: ncipollo/release-action@v1
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: canary
+          allowUpdates: true
+          artifacts: "publish/*.tar.lz"
+          generateReleaseNotes: true
+          name: Continuous Build
           prerelease: true
-          title: Continuous Build
-          files: |
-            LICENSE.txt
-            publish/*.tar.lz
+          removeArtifacts: true
+          tag: canary
