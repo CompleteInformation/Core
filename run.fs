@@ -83,7 +83,7 @@ module Task =
             DotNet.run project
     }
 
-    let publishWithConfig config fileName = job {
+    let publishWithConfig os config fileName = job {
         // At first, we have to build to get the frontend code files
         build config
 
@@ -97,7 +97,7 @@ module Task =
                 "publish"
                 Config.serverBackend
                 "-r"
-                DotNetOS.toString LinuxX64
+                os
                 "-v"
                 "minimal"
                 "-c"
@@ -138,8 +138,12 @@ module Task =
         // Cleanup
         Shell.cleanDir Config.publishPath
 
-        publishWithConfig Debug "ci-plugin-devkit"
-        publishWithConfig Release "complete-information-server"
+        // Release
+        publishWithConfig (DotNetOS.toString LinuxX64) Release "complete-information-server-linux-x64"
+        publishWithConfig "linux-arm64" Release "complete-information-server-linux-arm64"
+
+        // Devkit
+        publishWithConfig (DotNetOS.toString LinuxX64) Debug "ci-plugin-devkit-linux-x64"
     }
 
 [<EntryPoint>]
