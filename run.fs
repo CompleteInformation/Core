@@ -84,9 +84,6 @@ module Task =
     }
 
     let publishWithConfig os config fileName = job {
-        // At first, we have to build to get the frontend code files
-        build config
-
         let tmpPath = $"{Config.publishPath}/tmp"
         Shell.cleanDir tmpPath
 
@@ -110,7 +107,25 @@ module Task =
                 "/p:IncludeNativeLibrariesForSelfExtract=true"
                 "/p:DebugType=None"
             ]
-        | Release -> DotNet.publishSelfContained tmpPath Config.serverBackend LinuxX64
+        | Release ->
+            dotnet [
+                "publish"
+                Config.serverBackend
+                "-r"
+                os
+                "-v"
+                "minimal"
+                "-c"
+                DotNetConfig.toString Release
+                "-o"
+                tmpPath
+                "--self-contained"
+                "/p:PublishSingleFile=true"
+                "/p:PublishTrimmed=true"
+                "/p:EnableCompressionInSingleFile=true"
+                "/p:IncludeNativeLibrariesForSelfExtract=true"
+                "/p:DebugType=None"
+            ]
 
         // Remove all the *.xml files nobody needs
         Directory.EnumerateFiles(tmpPath, "*.xml") |> Seq.iter (Shell.rm)
@@ -139,11 +154,13 @@ module Task =
         Shell.cleanDir Config.publishPath
 
         // Release
+        build Release // At first, we have to build to get the frontend code files
         publishWithConfig (DotNetOS.toString LinuxX64) Release "complete-information-server-linux-x64"
         publishWithConfig "linux-arm" Release "complete-information-server-linux-arm"
         publishWithConfig "linux-arm64" Release "complete-information-server-linux-arm64"
 
         // Devkit
+        build Debug // At first, we have to build to get the frontend code files
         publishWithConfig (DotNetOS.toString LinuxX64) Debug "ci-plugin-devkit-linux-x64"
     }
 

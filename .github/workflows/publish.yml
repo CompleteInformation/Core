@@ -38,15 +38,15 @@ jobs:
       - name: Bundle releases
         run: dotnet run publish
       # For now I simply make a continuous build
-      - name: Move tag
-        run: git tag -f canary && git push -f origin canary
+      - name: Delete old release
+        run: gh release delete canary -y --cleanup-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Release files
         uses: ncipollo/release-action@v1
         with:
-          allowUpdates: true
           artifacts: "publish/*.tar.lz"
           generateReleaseNotes: true
           name: Continuous Build
           prerelease: true
-          removeArtifacts: true
           tag: canary
